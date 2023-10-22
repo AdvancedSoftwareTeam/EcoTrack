@@ -1,4 +1,5 @@
 const express = require('express');
+const app = express();
 
 // Define all routers
 const userRouter = require('./routes/userRoutes');
@@ -10,9 +11,7 @@ const resourcesRouter = require('./routes/resourcesRoutes');
 const openDataRouter = require('./routes/open-dataRoutes');
 const externalAPIRouter = require('./routes/external-apiRoutes');
 
-const app = express();
-
-// If we need to add middlewares they go heres
+// If we need to add middlewares they go here
 //
 
 // Use the routers

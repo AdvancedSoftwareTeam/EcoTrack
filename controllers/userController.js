@@ -10,7 +10,7 @@ const db = mysql.createConnection({
   database: 'ecotrack',
 });
 
-const SECRET_KEY = generateSecretKey();
+//const SECRET_KEY = generateSecretKey();
 
 exports.registerUser = (req, res) => {
   const { username, email, password } = req.body;
@@ -170,7 +170,7 @@ exports.updateUserProfile = (req, res) => {
   );
 };
 
-exports.authenticateUser = (req, res) => {
+exports.authenticateUser = (req, res, next) => {
   const token = req.headers.authorization;
 
   if (!token) {
@@ -180,7 +180,7 @@ exports.authenticateUser = (req, res) => {
   }
 
   // Verify the token
-  const secretKey = SECRET_KEY;
+  const secretKey = generateSecretKey();
   jwt.verify(token, secretKey, (err, decoded) => {
     if (err) {
       return res.status(401).json({ message: 'Unauthorized: Invalid token.' });
@@ -192,6 +192,57 @@ exports.authenticateUser = (req, res) => {
     // Continue to the next middleware or route
     next();
   });
+};
+
+exports.deactivateAccount = (req, res) => {
+  const userId = req.params.userId;
+
+  // Check if the user exists
+  db.query(
+    'SELECT * FROM User WHERE userID = ?',
+    [userId],
+    (error, results) => {
+      if (error) {
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({ message: 'User not found.' });
+      }
+
+      // Update the user's account to be deactivated
+      db.query(
+        'UPDATE User SET active = 0 WHERE userID = ?',
+        [userId],
+        (updateError) => {
+          if (updateError) {
+            return res
+              .status(500)
+              .json({ message: 'Account deactivation failed.' });
+          }
+
+          return res.json({ message: 'Account deactivated successfully.' });
+        }
+      );
+    }
+  );
+};
+
+exports.getUserInteractions = (req, res) => {
+  const userId = req.params.userId;
+
+  // Query the database to retrieve user interactions
+  db.query(
+    'SELECT * FROM Data WHERE userId = ?',
+    [userId],
+    (error, results) => {
+      if (error) {
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+
+      return res.json({ interactions: results });
+    }
+  );
 };
 
 exports.getUsersContributions = (req, res) => {
@@ -225,7 +276,7 @@ exports.refreshToken = (req, res) => {
 
   const user = req.user; // User information obtained during authentication
 
-  const secretKey = SECRET_KEY;
+  const secretKey = generateSecretKey();
   const options = { expiresIn: '1h' }; // Token expiration time
 
   const accessToken = jwt.sign(user, secretKey, options);
@@ -261,7 +312,7 @@ exports.logoutUser = (req, res) => {
 // ------------- optional ---------------
 // Function to generate a JSON Web Token (JWT)
 function generateToken(payload) {
-  const secretKey = SECRET_KEY;
+  const secretKey = generateSecretKey();
   const options = { expiresIn: '1h' }; // Token expiration time
 
   return jwt.sign(payload, secretKey, options);
