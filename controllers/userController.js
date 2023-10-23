@@ -10,7 +10,19 @@ const db = mysql.createConnection({
   database: 'ecotrack',
 });
 
-//const SECRET_KEY = generateSecretKey();
+// Function to generate a JSON Web Token (JWT)
+// Generate a strong, random secret key
+const generateSecretKey = () => {
+  const keyLength = 32; // 32 bytes (256 bits) key length
+  return crypto.randomBytes(keyLength).toString('hex');
+};
+function generateToken(payload) {
+  const secretKey = generateSecretKey();
+  const options = { expiresIn: '1h' }; // Token expiration time
+
+  return jwt.sign(payload, secretKey, options);
+}
+// ---------------------------------------
 
 exports.registerUser = (req, res) => {
   const { username, email, password } = req.body;
@@ -50,7 +62,7 @@ exports.registerUser = (req, res) => {
           return res
             .status(201)
             .json({ message: 'User registered successfully.', token });
-        }
+        },
       );
     });
   });
@@ -72,7 +84,7 @@ exports.loginUser = (req, res) => {
     const user = results[0];
 
     // Compare the provided password with the hashed password in the database
-    bcrypt.compare(password, user.password, (compareError, passwordMatch) => {
+    bcrypt.compare(password, user.Password, (compareError, passwordMatch) => {
       if (compareError) {
         return res.status(500).json({ message: 'Internal server error.' });
       }
@@ -88,7 +100,7 @@ exports.loginUser = (req, res) => {
 };
 
 exports.getUserProfile = (req, res) => {
-  const userId = req.params.userId;
+  const { userId } = req.params;
 
   db.query(
     'SELECT username, email, profilePicture, location, interests, sustainabilityScore FROM User WHERE userID = ?',
@@ -104,13 +116,13 @@ exports.getUserProfile = (req, res) => {
 
       const userProfile = results[0];
       return res.json({ user: userProfile });
-    }
+    },
   );
 };
-
 exports.updateUserProfile = (req, res) => {
-  const userId = req.params.userId;
-  const { username, email, location, profilePicture, interests } = req.body;
+  const { userId } = req.params;
+  const { username, email, location, profilePicture, interests } =
+    req.body.user;
 
   // Check if the user exists
   db.query(
@@ -136,29 +148,39 @@ exports.updateUserProfile = (req, res) => {
         updateFields.push('email = ?');
         updateValues.push(email);
       }
+
       if (location) {
         updateFields.push('location = ?');
         updateValues.push(location);
       }
+
+      // Handle interests (assuming interests is a JSON data type)
+      if (interests) {
+        // Use the JSON function JSON_SET to update JSON values
+        updateFields.push('interests = JSON_SET(interests, "$.key", ?)');
+        updateValues.push(interests.key);
+      }
+
       if (profilePicture) {
         updateFields.push('profilePicture = ?');
         updateValues.push(profilePicture);
-      }
-      if (interests) {
-        updateFields.push('interests = ?');
-        updateValues.push(interests);
       }
 
       if (updateFields.length === 0) {
         return res.status(400).json({ message: 'No valid fields to update.' });
       }
 
-      // Execute the update query
-      const updateQuery = `UPDATE User SET ${updateFields.join(
-        ', '
-      )} WHERE userID = ?`;
+      // Construct the parameterized update query
+      const updateQuery = `
+      UPDATE User
+      SET ${updateFields.join(', ')}
+      WHERE userID = ?;
+    `;
+
+      // Combine the values for the query
       const queryValues = [...updateValues, userId];
 
+      // Execute the parameterized query
       db.query(updateQuery, queryValues, (updateError) => {
         if (updateError) {
           return res.status(500).json({ message: 'Profile update failed.' });
@@ -166,36 +188,36 @@ exports.updateUserProfile = (req, res) => {
 
         return res.json({ message: 'Profile updated successfully.' });
       });
-    }
+    },
   );
 };
 
-exports.authenticateUser = (req, res, next) => {
-  const token = req.headers.authorization;
+// exports.authenticateUser = (req, res, next) => {
+//   const token = req.headers.authorization;
 
-  if (!token) {
-    return res
-      .status(401)
-      .json({ message: 'Unauthorized: No token provided.' });
-  }
+//   if (!token) {
+//     return res
+//       .status(401)
+//       .json({ message: 'Unauthorized: No token provided.' });
+//   }
 
-  // Verify the token
-  const secretKey = generateSecretKey();
-  jwt.verify(token, secretKey, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: 'Unauthorized: Invalid token.' });
-    }
+//   // Verify the token
+//   const secretKey = generateSecretKey();
+//   jwt.verify(token, secretKey, (err, decoded) => {
+//     if (err) {
+//       return res.status(401).json({ message: 'Unauthorized: Invalid token.' });
+//     }
 
-    // If the token is valid, attach the user's information to the request object
-    req.user = decoded;
+//     // If the token is valid, attach the user's information to the request object
+//     req.user = decoded;
 
-    // Continue to the next middleware or route
-    next();
-  });
-};
+//     // Continue to the next middleware or route
+//     next();
+//   });
+// };
 
 exports.deactivateAccount = (req, res) => {
-  const userId = req.params.userId;
+  const { userId } = req.params;
 
   // Check if the user exists
   db.query(
@@ -222,14 +244,14 @@ exports.deactivateAccount = (req, res) => {
           }
 
           return res.json({ message: 'Account deactivated successfully.' });
-        }
+        },
       );
-    }
+    },
   );
 };
 
 exports.getUserInteractions = (req, res) => {
-  const userId = req.params.userId;
+  const { userId } = req.params;
 
   // Query the database to retrieve user interactions
   db.query(
@@ -241,12 +263,12 @@ exports.getUserInteractions = (req, res) => {
       }
 
       return res.json({ interactions: results });
-    }
+    },
   );
 };
 
 exports.getUsersContributions = (req, res) => {
-  const userId = req.params.userId;
+  const { userId } = req.params;
 
   // Query the database to count the user's data submissions
   db.query(
@@ -261,20 +283,20 @@ exports.getUsersContributions = (req, res) => {
         return res.status(404).json({ message: 'User not found.' });
       }
 
-      const submissionCount = results[0].submissionCount;
+      const { submissionCount } = results[0];
 
       // Calculate contributions based on data submissions
       const contributions = submissionCount * 10; // Example calculation
 
       return res.json({ contributions });
-    }
+    },
   );
 };
 
 exports.refreshToken = (req, res) => {
   // we assume a user is already authenticated, and we'll generate a new access token for them
 
-  const user = req.user; // User information obtained during authentication
+  const { user } = req; // User information obtained during authentication
 
   const secretKey = generateSecretKey();
   const options = { expiresIn: '1h' }; // Token expiration time
@@ -296,31 +318,10 @@ exports.searchUsers = (req, res) => {
       }
 
       return res.json({ users: results });
-    }
+    },
   );
 };
 
 exports.logoutUser = (req, res) => {
-  // we're assuming a simple token-based authentication system
-
-  // You might clear the token, session, or perform other logout-related actions here
-  // For this example, we're returning a success message
-
-  return res.json({ message: 'Logout successful.' });
+  res.json({ message: 'Logout successful. Token invalidated.' });
 };
-
-// ------------- optional ---------------
-// Function to generate a JSON Web Token (JWT)
-function generateToken(payload) {
-  const secretKey = generateSecretKey();
-  const options = { expiresIn: '1h' }; // Token expiration time
-
-  return jwt.sign(payload, secretKey, options);
-}
-
-// Generate a strong, random secret key
-const generateSecretKey = () => {
-  const keyLength = 32; // 32 bytes (256 bits) key length
-  return crypto.randomBytes(keyLength).toString('hex');
-};
-// ---------------------------------------
