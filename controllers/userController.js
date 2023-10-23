@@ -119,10 +119,10 @@ exports.getUserProfile = (req, res) => {
     },
   );
 };
-
 exports.updateUserProfile = (req, res) => {
   const { userId } = req.params;
-  const { username, email, location, profilePicture, interests } = req.body;
+  const { username, email, location, profilePicture, interests } =
+    req.body.user;
 
   // Check if the user exists
   db.query(
@@ -148,29 +148,39 @@ exports.updateUserProfile = (req, res) => {
         updateFields.push('email = ?');
         updateValues.push(email);
       }
+
       if (location) {
         updateFields.push('location = ?');
         updateValues.push(location);
       }
+
+      // Handle interests (assuming interests is a JSON data type)
+      if (interests) {
+        // Use the JSON function JSON_SET to update JSON values
+        updateFields.push('interests = JSON_SET(interests, "$.key", ?)');
+        updateValues.push(interests.key);
+      }
+
       if (profilePicture) {
         updateFields.push('profilePicture = ?');
         updateValues.push(profilePicture);
-      }
-      if (interests) {
-        updateFields.push('interests = ?');
-        updateValues.push(interests);
       }
 
       if (updateFields.length === 0) {
         return res.status(400).json({ message: 'No valid fields to update.' });
       }
 
-      // Execute the update query
-      const updateQuery = `UPDATE User SET ${updateFields.join(
-        ', ',
-      )} WHERE userID = ?`;
+      // Construct the parameterized update query
+      const updateQuery = `
+      UPDATE User
+      SET ${updateFields.join(', ')}
+      WHERE userID = ?;
+    `;
+
+      // Combine the values for the query
       const queryValues = [...updateValues, userId];
 
+      // Execute the parameterized query
       db.query(updateQuery, queryValues, (updateError) => {
         if (updateError) {
           return res.status(500).json({ message: 'Profile update failed.' });
@@ -182,29 +192,29 @@ exports.updateUserProfile = (req, res) => {
   );
 };
 
-exports.authenticateUser = (req, res, next) => {
-  const token = req.headers.authorization;
+// exports.authenticateUser = (req, res, next) => {
+//   const token = req.headers.authorization;
 
-  if (!token) {
-    return res
-      .status(401)
-      .json({ message: 'Unauthorized: No token provided.' });
-  }
+//   if (!token) {
+//     return res
+//       .status(401)
+//       .json({ message: 'Unauthorized: No token provided.' });
+//   }
 
-  // Verify the token
-  const secretKey = generateSecretKey();
-  jwt.verify(token, secretKey, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: 'Unauthorized: Invalid token.' });
-    }
+//   // Verify the token
+//   const secretKey = generateSecretKey();
+//   jwt.verify(token, secretKey, (err, decoded) => {
+//     if (err) {
+//       return res.status(401).json({ message: 'Unauthorized: Invalid token.' });
+//     }
 
-    // If the token is valid, attach the user's information to the request object
-    req.user = decoded;
+//     // If the token is valid, attach the user's information to the request object
+//     req.user = decoded;
 
-    // Continue to the next middleware or route
-    next();
-  });
-};
+//     // Continue to the next middleware or route
+//     next();
+//   });
+// };
 
 exports.deactivateAccount = (req, res) => {
   const { userId } = req.params;
