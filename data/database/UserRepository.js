@@ -10,7 +10,9 @@ const db = mysql.createConnection({
 });
 
 class UserRepository {
-  registerUser(username, email, password) {
+  registerUser(req, res) {
+    const { username, email, password } = req.body;
+
     return new Promise((resolve, reject) => {
       // Check if the user already exists (Checking the email)
       db.query(

@@ -3,10 +3,8 @@ const UserRepository = require('../data/database/UserRepository');
 const userRepository = new UserRepository();
 
 exports.registerUser = (req, res) => {
-  const { username, email, password } = req.body;
-
   userRepository
-    .registerUser(username, email, password)
+    .registerUser(req, res)
     .then((message) => {
       res.status(201).json({ message }); // Registration was successful, return the success message
     })
