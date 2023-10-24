@@ -14,8 +14,6 @@ router
   .get(authenticateUser, userController.getUserProfile)
   .put(authenticateUser, userController.updateUserProfile);
 
-router.get('/profile/:userId', userController.getOthersProfile);
-
 router.delete(
   '/deactivate',
   authenticateUser,
@@ -23,11 +21,9 @@ router.delete(
 );
 router.get('/interactions', userController.getUserInteractions);
 router.get('/contributions', userController.getUsersContributions);
-// Route to refresh the access token
-router.post('/refresh-token', userController.refreshToken);
 
 // Route to search for users
-router.get('/search', userController.searchUsers);
+router.get('/search/:username', authenticateUser, userController.searchUser);
 
 // // Route to log out (invalidate the token or session)
 router.post('/logout', userController.logoutUser);
