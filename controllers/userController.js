@@ -16,94 +16,112 @@ const generateSecretKey = () => {
   const keyLength = 32; // 32 bytes (256 bits) key length
   return crypto.randomBytes(keyLength).toString('hex');
 };
-function generateToken(payload) {
-  const secretKey = generateSecretKey();
-  const options = { expiresIn: '1h' }; // Token expiration time
-
-  return jwt.sign(payload, secretKey, options);
-}
 // ---------------------------------------
 
 exports.registerUser = (req, res) => {
   const { username, email, password } = req.body;
 
   // Check if the user is already exists (Checking the email)
-  db.query('SELECT * FROM User WHERE email = ?', [email], (error, results) => {
-    if (error) {
-      return res.status(500).json({
-        message: 'Internal server error.',
-      });
-    }
-
-    if (results.length > 0) {
-      return res.status(400).json({
-        message: 'Email already in use.',
-      });
-    }
-
-    // Hash the password before storing it
-    bcrypt.hash(password, 10, (hashError, hashedPassword) => {
-      if (hashError) {
-        return res.status(500).json({ message: 'User registration failed.' });
+  db.query(
+    'SELECT * FROM User WHERE ( email = ? OR username = ? ) AND active = 1',
+    [email, username],
+    (error, results) => {
+      if (error) {
+        return res.status(500).json({ message: 'Internal server error.' });
       }
 
-      // Create new user with the hashed password
-      db.query(
-        'INSERT INTO User (username, email, password) VALUES (?, ?, ?)',
-        [username, email, hashedPassword],
-        (insertError) => {
-          if (insertError) {
-            return res
-              .status(500)
-              .json({ message: 'User registration failed.' });
-          }
+      if (results.length > 0) {
+        return res
+          .status(400)
+          .json({ message: 'Email or username already in use.' });
+      }
 
-          const token = generateToken({ username, email });
-          return res
-            .status(201)
-            .json({ message: 'User registered successfully.', token });
-        },
-      );
-    });
-  });
+      // Hash the password before storing it
+      bcrypt.hash(password, 10, (hashError, hashedPassword) => {
+        if (hashError) {
+          return res.status(500).json({ message: 'User registration failed.' });
+        }
+
+        const registrationDate = new Date(); // Get the current date and time
+
+        // Create new user with the hashed password and registration date
+        db.query(
+          'INSERT INTO User (username, email, password, registrationDate) VALUES (?, ?, ?, ?)',
+          [username, email, hashedPassword, registrationDate],
+          (insertError) => {
+            if (insertError) {
+              return res
+                .status(500)
+                .json({ message: 'User registration failed.' });
+            }
+
+            return res
+              .status(201)
+              .json({ message: 'User registered successfully.' });
+          },
+        );
+      });
+    },
+  );
 };
 
 exports.loginUser = (req, res) => {
+  if (req.session.userId) {
+    return res.status(500).json({ message: 'User is already logged in.' });
+  }
   const { email, password } = req.body;
 
   // Find the user by email
-  db.query('SELECT * FROM User WHERE email = ?', [email], (error, results) => {
-    if (error) {
-      return res.status(500).json({ message: 'Internal server error.' });
-    }
-
-    if (results.length === 0) {
-      return res.status(401).json({ message: 'Invalid data.' });
-    }
-
-    const user = results[0];
-
-    // Compare the provided password with the hashed password in the database
-    bcrypt.compare(password, user.Password, (compareError, passwordMatch) => {
-      if (compareError) {
+  db.query(
+    'SELECT * FROM User WHERE email = ? AND active = 1',
+    [email],
+    (error, results) => {
+      if (error) {
         return res.status(500).json({ message: 'Internal server error.' });
       }
-      if (!passwordMatch) {
+
+      if (results.length === 0) {
         return res.status(401).json({ message: 'Invalid data.' });
       }
 
-      // Passwords match; generate a token and send a successful response
-      const token = generateToken({ email });
-      return res.json({ message: 'Login successful.', token });
-    });
-  });
+      const user = results[0];
+
+      // Compare the provided password with the hashed password in the database
+      bcrypt.compare(password, user.Password, (compareError, passwordMatch) => {
+        if (compareError) {
+          return res.status(500).json({ message: 'Internal server error.' });
+        }
+        if (!passwordMatch) {
+          return res.status(401).json({ message: 'Invalid data.' });
+        }
+
+        req.session.userId = user.UserID; // Store the user's ID in the session
+
+        // Update lastLoginDate in the database
+        db.query(
+          'UPDATE User SET lastLoginDate = CURRENT_TIMESTAMP WHERE userID = ?',
+          [user.UserID],
+          (updateError) => {
+            if (updateError) {
+              return res
+                .status(500)
+                .json({ message: 'Internal server error.' });
+            }
+
+            return res.json({ message: 'Login successful.' });
+          },
+        );
+      });
+    },
+  );
 };
 
 exports.getUserProfile = (req, res) => {
-  const { userId } = req.params;
+  const { userId } = req.session;
 
+  console.log(userId);
   db.query(
-    'SELECT username, email, profilePicture, location, interests, sustainabilityScore FROM User WHERE userID = ?',
+    'SELECT username, email, profilePicture, location, interests, sustainabilityScore, registrationDate, lastLoginDate FROM User WHERE userID = ? AND active = 1',
     [userId],
     (error, results) => {
       if (error) {
@@ -119,14 +137,36 @@ exports.getUserProfile = (req, res) => {
     },
   );
 };
-exports.updateUserProfile = (req, res) => {
+
+exports.getOthersProfile = (req, res) => {
   const { userId } = req.params;
+
+  db.query(
+    'SELECT username, profilePicture, location, interests, sustainabilityScore FROM User WHERE userID = ? AND active = 1',
+    [userId],
+    (error, results) => {
+      if (error) {
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({ message: 'User not found.' });
+      }
+
+      const userProfile = results[0];
+      return res.json({ user: userProfile });
+    },
+  );
+};
+
+exports.updateUserProfile = (req, res) => {
+  const { userId } = req.session;
   const { username, email, location, profilePicture, interests } =
     req.body.user;
 
   // Check if the user exists
   db.query(
-    'SELECT * FROM User WHERE userID = ?',
+    'SELECT * FROM User WHERE userID = ? AND active = 1',
     [userId],
     (error, results) => {
       if (error) {
@@ -174,7 +214,7 @@ exports.updateUserProfile = (req, res) => {
       const updateQuery = `
       UPDATE User
       SET ${updateFields.join(', ')}
-      WHERE userID = ?;
+      WHERE userID = ? AND active = 1;
     `;
 
       // Combine the values for the query
@@ -192,32 +232,8 @@ exports.updateUserProfile = (req, res) => {
   );
 };
 
-// exports.authenticateUser = (req, res, next) => {
-//   const token = req.headers.authorization;
-
-//   if (!token) {
-//     return res
-//       .status(401)
-//       .json({ message: 'Unauthorized: No token provided.' });
-//   }
-
-//   // Verify the token
-//   const secretKey = generateSecretKey();
-//   jwt.verify(token, secretKey, (err, decoded) => {
-//     if (err) {
-//       return res.status(401).json({ message: 'Unauthorized: Invalid token.' });
-//     }
-
-//     // If the token is valid, attach the user's information to the request object
-//     req.user = decoded;
-
-//     // Continue to the next middleware or route
-//     next();
-//   });
-// };
-
 exports.deactivateAccount = (req, res) => {
-  const { userId } = req.params;
+  const { userId } = req.session;
 
   // Check if the user exists
   db.query(
@@ -243,7 +259,16 @@ exports.deactivateAccount = (req, res) => {
               .json({ message: 'Account deactivation failed.' });
           }
 
-          return res.json({ message: 'Account deactivated successfully.' });
+          // Destroy the session after deactivating the account
+          req.session.destroy((destroyError) => {
+            if (destroyError) {
+              return res
+                .status(500)
+                .json({ message: 'Error destroying session.' });
+            }
+
+            return res.json({ message: 'Account deactivated successfully.' });
+          });
         },
       );
     },
@@ -323,5 +348,27 @@ exports.searchUsers = (req, res) => {
 };
 
 exports.logoutUser = (req, res) => {
-  res.json({ message: 'Logout successful. Token invalidated.' });
+  const { userId } = req.session;
+
+  // Check if the user is active before destroying the session
+  db.query(
+    'SELECT * FROM User WHERE userID = ? AND active = 1',
+    [userId],
+    (searchError, results) => {
+      if (searchError) {
+        res.status(500).json({ message: 'Error logging out.' });
+      } else if (results.length === 0) {
+        res.status(500).json({ message: 'Error logging out.' });
+      } else {
+        // User is active, destroy the session
+        req.session.destroy((err) => {
+          if (err) {
+            res.status(500).json({ message: 'Error logging out.' });
+          } else {
+            res.json({ message: 'Logged out successfully.' });
+          }
+        });
+      }
+    },
+  );
 };

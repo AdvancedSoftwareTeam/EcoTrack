@@ -1,5 +1,6 @@
 const express = require('express');
 const userController = require('../controllers/userController');
+const { authenticateUser } = require('../middlewares/authentication');
 
 const router = express.Router();
 
@@ -8,9 +9,18 @@ router.post('/register', userController.registerUser);
 router.post('/login', userController.loginUser);
 
 // Protected routes that require authentication
-router.get('/profile/:userId', userController.getUserProfile);
-router.put('/profile/:userId', userController.updateUserProfile);
-router.delete('/deactivate', userController.deactivateAccount);
+router
+  .route('/profile')
+  .get(authenticateUser, userController.getUserProfile)
+  .put(authenticateUser, userController.updateUserProfile);
+
+router.get('/profile/:userId', userController.getOthersProfile);
+
+router.delete(
+  '/deactivate',
+  authenticateUser,
+  userController.deactivateAccount,
+);
 router.get('/interactions', userController.getUserInteractions);
 router.get('/contributions', userController.getUsersContributions);
 // Route to refresh the access token
