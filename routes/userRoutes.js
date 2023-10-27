@@ -1,11 +1,12 @@
 const express = require('express');
 const userController = require('../controllers/userController');
 const { authenticateUser } = require('../middlewares/authentication');
+const authController = require('../controllers/authController');
 
 const router = express.Router();
 
 // Routes for user registration and authentication
-router.post('/register', userController.registerUser);
+router.post('/signup', authController.signup);
 router.post('/login', userController.loginUser);
 
 // Protected routes that require authentication
