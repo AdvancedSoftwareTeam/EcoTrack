@@ -1,7 +1,10 @@
+/* eslint-disable import/no-extraneous-dependencies */
 const express = require('express');
+const sessionConfig = require('./middlewares/sessionConfig'); // Import the session configuration module
 
 const app = express();
 app.use(express.json());
+app.use(sessionConfig); // Apply the session configuration
 
 // Define all routers
 const userRouter = require('./routes/userRoutes');

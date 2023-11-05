@@ -1,327 +1,46 @@
-const mysql = require('mysql2');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const crypto = require('crypto');
+const UserRepository = require('../data/database/UserRepository');
 
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '12345678',
-  database: 'ecotrack',
-});
-
-// Function to generate a JSON Web Token (JWT)
-// Generate a strong, random secret key
-const generateSecretKey = () => {
-  const keyLength = 32; // 32 bytes (256 bits) key length
-  return crypto.randomBytes(keyLength).toString('hex');
-};
-function generateToken(payload) {
-  const secretKey = generateSecretKey();
-  const options = { expiresIn: '1h' }; // Token expiration time
-
-  return jwt.sign(payload, secretKey, options);
-}
-// ---------------------------------------
+const userRepository = new UserRepository();
 
 exports.registerUser = (req, res) => {
-  const { username, email, password } = req.body;
-
-  // Check if the user is already exists (Checking the email)
-  db.query('SELECT * FROM User WHERE email = ?', [email], (error, results) => {
-    if (error) {
-      return res.status(500).json({
-        message: 'Internal server error.',
-      });
-    }
-
-    if (results.length > 0) {
-      return res.status(400).json({
-        message: 'Email already in use.',
-      });
-    }
-
-    // Hash the password before storing it
-    bcrypt.hash(password, 10, (hashError, hashedPassword) => {
-      if (hashError) {
-        return res.status(500).json({ message: 'User registration failed.' });
-      }
-
-      // Create new user with the hashed password
-      db.query(
-        'INSERT INTO User (username, email, password) VALUES (?, ?, ?)',
-        [username, email, hashedPassword],
-        (insertError) => {
-          if (insertError) {
-            return res
-              .status(500)
-              .json({ message: 'User registration failed.' });
-          }
-
-          const token = generateToken({ username, email });
-          return res
-            .status(201)
-            .json({ message: 'User registered successfully.', token });
-        },
-      );
+  userRepository
+    .registerUser(req, res)
+    .then((message) => {
+      res.status(201).json({ message }); // Registration was successful, return the success message
+    })
+    .catch((error) => {
+      res.status(400).json({ message: error }); // Registration encountered an error, return the error message
     });
-  });
 };
 
 exports.loginUser = (req, res) => {
-  const { email, password } = req.body;
-
-  // Find the user by email
-  db.query('SELECT * FROM User WHERE email = ?', [email], (error, results) => {
-    if (error) {
-      return res.status(500).json({ message: 'Internal server error.' });
-    }
-
-    if (results.length === 0) {
-      return res.status(401).json({ message: 'Invalid data.' });
-    }
-
-    const user = results[0];
-
-    // Compare the provided password with the hashed password in the database
-    bcrypt.compare(password, user.Password, (compareError, passwordMatch) => {
-      if (compareError) {
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-      if (!passwordMatch) {
-        return res.status(401).json({ message: 'Invalid data.' });
-      }
-
-      // Passwords match; generate a token and send a successful response
-      const token = generateToken({ email });
-      return res.json({ message: 'Login successful.', token });
-    });
-  });
+  userRepository.loginUser(req, res);
 };
 
 exports.getUserProfile = (req, res) => {
-  const { userId } = req.params;
-
-  db.query(
-    'SELECT username, email, profilePicture, location, interests, sustainabilityScore FROM User WHERE userID = ?',
-    [userId],
-    (error, results) => {
-      if (error) {
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-
-      if (results.length === 0) {
-        return res.status(404).json({ message: 'User not found.' });
-      }
-
-      const userProfile = results[0];
-      return res.json({ user: userProfile });
-    },
-  );
+  userRepository.getUserProfile(req, res);
 };
+
+exports.searchUser = (req, res) => {
+  userRepository.searchUser(req, res);
+};
+
 exports.updateUserProfile = (req, res) => {
-  const { userId } = req.params;
-  const { username, email, location, profilePicture, interests } =
-    req.body.user;
-
-  // Check if the user exists
-  db.query(
-    'SELECT * FROM User WHERE userID = ?',
-    [userId],
-    (error, results) => {
-      if (error) {
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-      if (results.length === 0) {
-        return res.status(404).json({ message: 'User not found.' });
-      }
-
-      // Prepare an update query based on the fields the user wants to update
-      const updateFields = [];
-      const updateValues = [];
-
-      if (username) {
-        updateFields.push('username = ?');
-        updateValues.push(username);
-      }
-      if (email) {
-        updateFields.push('email = ?');
-        updateValues.push(email);
-      }
-
-      if (location) {
-        updateFields.push('location = ?');
-        updateValues.push(location);
-      }
-
-      // Handle interests (assuming interests is a JSON data type)
-      if (interests) {
-        // Use the JSON function JSON_SET to update JSON values
-        updateFields.push('interests = JSON_SET(interests, "$.key", ?)');
-        updateValues.push(interests.key);
-      }
-
-      if (profilePicture) {
-        updateFields.push('profilePicture = ?');
-        updateValues.push(profilePicture);
-      }
-
-      if (updateFields.length === 0) {
-        return res.status(400).json({ message: 'No valid fields to update.' });
-      }
-
-      // Construct the parameterized update query
-      const updateQuery = `
-      UPDATE User
-      SET ${updateFields.join(', ')}
-      WHERE userID = ?;
-    `;
-
-      // Combine the values for the query
-      const queryValues = [...updateValues, userId];
-
-      // Execute the parameterized query
-      db.query(updateQuery, queryValues, (updateError) => {
-        if (updateError) {
-          return res.status(500).json({ message: 'Profile update failed.' });
-        }
-
-        return res.json({ message: 'Profile updated successfully.' });
-      });
-    },
-  );
+  userRepository.updateUserProfile(req, res);
 };
-
-// exports.authenticateUser = (req, res, next) => {
-//   const token = req.headers.authorization;
-
-//   if (!token) {
-//     return res
-//       .status(401)
-//       .json({ message: 'Unauthorized: No token provided.' });
-//   }
-
-//   // Verify the token
-//   const secretKey = generateSecretKey();
-//   jwt.verify(token, secretKey, (err, decoded) => {
-//     if (err) {
-//       return res.status(401).json({ message: 'Unauthorized: Invalid token.' });
-//     }
-
-//     // If the token is valid, attach the user's information to the request object
-//     req.user = decoded;
-
-//     // Continue to the next middleware or route
-//     next();
-//   });
-// };
 
 exports.deactivateAccount = (req, res) => {
-  const { userId } = req.params;
-
-  // Check if the user exists
-  db.query(
-    'SELECT * FROM User WHERE userID = ?',
-    [userId],
-    (error, results) => {
-      if (error) {
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-
-      if (results.length === 0) {
-        return res.status(404).json({ message: 'User not found.' });
-      }
-
-      // Update the user's account to be deactivated
-      db.query(
-        'UPDATE User SET active = 0 WHERE userID = ?',
-        [userId],
-        (updateError) => {
-          if (updateError) {
-            return res
-              .status(500)
-              .json({ message: 'Account deactivation failed.' });
-          }
-
-          return res.json({ message: 'Account deactivated successfully.' });
-        },
-      );
-    },
-  );
-};
-
-exports.getUserInteractions = (req, res) => {
-  const { userId } = req.params;
-
-  // Query the database to retrieve user interactions
-  db.query(
-    'SELECT * FROM Data WHERE userId = ?',
-    [userId],
-    (error, results) => {
-      if (error) {
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-
-      return res.json({ interactions: results });
-    },
-  );
-};
-
-exports.getUsersContributions = (req, res) => {
-  const { userId } = req.params;
-
-  // Query the database to count the user's data submissions
-  db.query(
-    'SELECT COUNT(*) AS submissionCount FROM Data WHERE userId = ?',
-    [userId],
-    (error, results) => {
-      if (error) {
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-
-      if (results.length === 0) {
-        return res.status(404).json({ message: 'User not found.' });
-      }
-
-      const { submissionCount } = results[0];
-
-      // Calculate contributions based on data submissions
-      const contributions = submissionCount * 10; // Example calculation
-
-      return res.json({ contributions });
-    },
-  );
-};
-
-exports.refreshToken = (req, res) => {
-  // we assume a user is already authenticated, and we'll generate a new access token for them
-
-  const { user } = req; // User information obtained during authentication
-
-  const secretKey = generateSecretKey();
-  const options = { expiresIn: '1h' }; // Token expiration time
-
-  const accessToken = jwt.sign(user, secretKey, options);
-
-  return res.json({ accessToken });
-};
-
-exports.searchUsers = (req, res) => {
-  const { query } = req.query; // Assuming you pass the search query as a query parameter
-
-  db.query(
-    'SELECT userID, username, email FROM User WHERE username LIKE ? OR email LIKE ?',
-    [`%${query}%`, `%${query}%`],
-    (error, results) => {
-      if (error) {
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-
-      return res.json({ users: results });
-    },
-  );
+  userRepository.deactivateAccount(req, res);
 };
 
 exports.logoutUser = (req, res) => {
-  res.json({ message: 'Logout successful. Token invalidated.' });
+  userRepository.logoutUser(req, res);
+};
+
+exports.getUserInteractions = (req, res) => {
+  userRepository.getUserInteractions(req, res);
+};
+
+exports.getUsersContributions = (req, res) => {
+  userRepository.getUsersContributions(req, res);
 };
