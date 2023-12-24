@@ -35,7 +35,8 @@ router.get(
   userController.getReceivedMessages,
 );
 router.get('/sentMessages', authenticateUser, userController.getSentMessages);
-router.post('/sendMessage', authenticateUser, userController.se);
+router.post('/sendMessage', authenticateUser, userController.sendMessage);
+
 // Route to search for users
 router.get('/search/:username', authenticateUser, userController.searchUser);
 
