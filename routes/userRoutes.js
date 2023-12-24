@@ -20,9 +20,22 @@ router.delete(
   authenticateUser,
   userController.deactivateAccount,
 );
-router.get('/interactions', userController.getUserInteractions);
+
+router.get('/sameUsers', authenticateUser, userController.getSameUsers);
+router.post(
+  '/contribution',
+  authenticateUser,
+  userController.createContribution,
+);
 router.get('/contributions', userController.getUsersContributions);
 
+router.get(
+  '/receivedMessages',
+  authenticateUser,
+  userController.getReceivedMessages,
+);
+router.get('/sentMessages', authenticateUser, userController.getSentMessages);
+router.post('/sendMessage', authenticateUser, userController.sendMessage);
 // Route to search for users
 router.get('/search/:username', authenticateUser, userController.searchUser);
 

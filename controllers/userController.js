@@ -37,10 +37,26 @@ exports.logoutUser = (req, res) => {
   userRepository.logoutUser(req, res);
 };
 
-exports.getUserInteractions = (req, res) => {
-  userRepository.getUserInteractions(req, res);
+exports.getSameUsers = (req, res) => {
+  userRepository.getSameUsers(req, res);
+};
+
+exports.getReceivedMessages = (req, res) => {
+  userRepository.getReceivedMessages(req, res);
+};
+
+exports.getSentMessages = (req, res) => {
+  userRepository.getSentMessages(req, res);
+};
+
+exports.sendMessage = (req, res) => {
+  userRepository.sendMessage(req, res);
 };
 
 exports.getUsersContributions = (req, res) => {
   userRepository.getUsersContributions(req, res);
+};
+
+exports.createContribution = (req, res) => {
+  userRepository.createContribution(req, res);
 };
