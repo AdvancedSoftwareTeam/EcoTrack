@@ -7,6 +7,7 @@ exports.submitData = async (req, res) => {
     .submitData(req, res)
     .then((message) => {
       res.status(201).json({ message });
+      alertsRepo.checkAlerts(req,res);
     })
     .catch((error) => {
       res.status(400).json({ message: error });
