@@ -472,9 +472,7 @@ class UserRepository {
             if (getResults[0].received_messages) {
               try {
                 // Attempt to parse the received_messages as JSON
-                const receivedMessages = JSON.parse(
-                  getResults[0].received_messages,
-                );
+                const receivedMessages = getResults[0].received_messages;
 
                 // Check if the parsed data is an array
                 if (Array.isArray(receivedMessages)) {
@@ -555,112 +553,113 @@ class UserRepository {
     const { userId } = req.session;
     const data = req.body;
 
+    // Function to execute a database query
+    const queryDatabase = (sql, params) => {
+      return new Promise((resolve, reject) => {
+        db.query(sql, params, (error, results) => {
+          if (error) {
+            console.error('Error:', error);
+            reject(error);
+          } else {
+            resolve(results);
+          }
+        });
+      });
+    };
+
+    let userResults;
+    let parsedExistingReceivedMessages; // Declare it at a higher scope
+
     // Check if the user exists and is active
-    db.query(
-      'SELECT * FROM User WHERE userID = ? AND active = 1',
-      [userId],
-      (userError, userResults) => {
-        if (userError) {
-          console.error('Error:', userError);
-          return res.status(500).json({ message: 'Internal server error.' });
-        }
-
+    queryDatabase('SELECT * FROM User WHERE userID = ? AND active = 1', [
+      userId,
+    ])
+      .then((results) => {
+        userResults = results;
         if (userResults.length === 0) {
-          return res
-            .status(404)
-            .json({ message: 'User not found or not active.' });
+          throw { status: 404, message: 'User not found or not active.' };
         }
 
-        // Check if the 'data' object is defined and has the expected properties
         if (!(data && data.to && data.content)) {
-          return res.status(400).json({ message: 'Invalid message data.' });
+          throw { status: 400, message: 'Invalid message data.' };
         }
 
         // Check if the recipient user exists
-        db.query(
-          'SELECT * FROM User WHERE username = ?',
-          [data.to],
-          (recipientError, recipientResults) => {
-            if (recipientError) {
-              console.error('Error:', recipientError);
-              return res
-                .status(500)
-                .json({ message: 'Internal server error.' });
-            }
+        return queryDatabase('SELECT * FROM User WHERE username = ?', [
+          data.to,
+        ]);
+      })
+      .then((recipientResults) => {
+        if (recipientResults.length === 0) {
+          throw { status: 404, message: 'Recipient user not found.' };
+        }
 
-            if (recipientResults.length === 0) {
-              return res
-                .status(404)
-                .json({ message: 'Recipient user not found.' });
-            }
+        const sentDate = new Date();
 
-            const sentDate = new Date(); // Get the current date and time
+        const existingSentMessages = recipientResults[0].sent_messages || '[]';
+        const existingReceivedMessages =
+          recipientResults[0].received_messages || '[]';
 
-            // Retrieve recipient user's existing sent messages
-            const existingSentMessages =
-              recipientResults[0].sent_messages || '[]';
-            const existingReceivedMessages =
-              recipientResults[0].received_messages || '[]';
+        const parsedExistingSentMessages = existingSentMessages;
+        parsedExistingReceivedMessages = existingReceivedMessages;
 
-            // Parse the existing sent messages or initialize as an empty array
-            const parsedExistingSentMessages = JSON.parse(existingSentMessages);
-            const parsedExistingReceivedMessages = JSON.parse(
-              existingReceivedMessages,
-            );
+        console.log(userResults[0].Username);
+        console.log(userResults);
 
-            // Create a new message object with sender's username
-            const newMessage = {
-              to: data.to, // receiver's username
-              content: data.content,
-              sentDate: sentDate.toISOString(),
-            };
-            const newMessage1 = {
-              from: userResults[0].username, // Sender's username
-              content: data.content,
-              sentDate: sentDate.toISOString(),
-            };
-
-            // Update the recipient user's sent_messages array
-            parsedExistingSentMessages.push(newMessage);
-            parsedExistingReceivedMessages.push(newMessage1);
-
-            // Update the recipient user's record in the database with the new sent_messages array
-            db.query(
-              'UPDATE User SET sent_messages = ? WHERE username = ?',
-              [
-                JSON.stringify(parsedExistingSentMessages),
-                userResults[0].username,
-              ],
-              (updateError1) => {
-                if (updateError1) {
-                  console.error('Error:', updateError1);
-                  return res
-                    .status(500)
-                    .json({ message: 'Message sending failed.' });
-                }
-
-                // Update the sender user's record in the database with the new received_messages array
-                db.query(
-                  'UPDATE User SET received_messages = ? WHERE username = ?',
-                  [JSON.stringify(parsedExistingReceivedMessages), data.to],
-                  (updateError2) => {
-                    if (updateError2) {
-                      console.error('Error:', updateError2);
-                      return res
-                        .status(500)
-                        .json({ message: 'Message sending failed.' });
-                    }
-
-                    // Send the response only after the database queries have been executed
-                    return res.json({ message: 'Message sent successfully.' });
-                  },
-                );
-              },
-            );
+        const newMessage = {
+          to: data.to,
+          content: data.content,
+          sentDate: sentDate.toISOString(),
+        };
+        const newMessage1 = {
+          from: userResults[0].Username,
+          content: data.content,
+          sentDate: sentDate.toISOString(),
+          senderInfo: {
+            Username: userResults[0].Username,
           },
+        };
+
+        parsedExistingSentMessages.push(newMessage);
+        parsedExistingReceivedMessages.push(newMessage1);
+
+        // Update the recipient user's record in the database with the new sent_messages array
+        return queryDatabase(
+          'UPDATE User SET sent_messages = ? WHERE userID = ?',
+          [JSON.stringify(parsedExistingSentMessages), userId],
         );
-      },
-    );
+      })
+      .then(() => {
+        // Update the sender user's record in the database with the new received_messages array
+        return queryDatabase(
+          'UPDATE User SET received_messages = ? WHERE username = ?',
+          [JSON.stringify(parsedExistingReceivedMessages), data.to],
+        );
+      })
+      .then(() => {
+        // Fetch the updated sent_messages array for the sender
+        return queryDatabase(
+          'SELECT sent_messages FROM User WHERE userID = ?',
+          [userId],
+        );
+      })
+      .then((senderRecord) => {
+        console.log(
+          'Sender Sent Messages after update:',
+          senderRecord[0].sent_messages,
+        );
+
+        // Send the response only after the database queries have been executed
+        res.json({
+          message: 'Message sent successfully.',
+          // Omit the sentMessages field if you don't want to return the list of sent messages
+        });
+      })
+      .catch((error) => {
+        const status = error.status || 500;
+        console.error('Error during message sending:', error);
+        res.status(status).json({ message: error.message });
+      });
   }
 }
 
