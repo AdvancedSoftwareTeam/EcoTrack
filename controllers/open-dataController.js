@@ -1,8 +1,27 @@
-exports.searchOpenData = async (req, res) => {};
+const DataRepository = require('../data/database/DataRepository');
+const dataRepository = new DataRepository();
 
-exports.searchOpenDataByCriteria = (req, res) => {};
+exports.searchOpenData = async (req, res) => {
+  dataRepository.searchOpenData(req, res);
+};
 
-exports.performAnalysis = async (req, res) => {};
+exports.searchOpenDataByDataType = (req, res) => {
+  dataRepository.searchOpenDataByDataType(req, res);
+};
 
-exports.submitAnalysis = (req, res) => {};
-exports.updateAnalysis = async (req, res) => {};
+exports.performAnalysis = async (req, res) => {
+  dataRepository.performAnalysis(req, res);
+};
+exports.performAnalysisbyDataType = async (req, res) => {
+  dataRepository.performAnalysisbyDataType(req, res);
+};
+exports.submitAnalysis = (req, res) => {
+  dataRepository
+    .submitAnalysis(req, res)
+    .then((message) => {
+      res.status(201).json({ message });
+    })
+    .catch((error) => {
+      res.status(400).json({ message: error });
+    });
+};
