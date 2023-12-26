@@ -1,24 +1,23 @@
 const userSocketMap = {};
 
-const addUserSocket = (userId, socket) => {
+exports.addUserSocket = (userId, socket) => {
   userSocketMap[userId] = socket;
-  
 };
 
-const removeUserSocket = (socket) => {
-  const userId = Object.keys(userSocketMap).find((key) => userSocketMap[key] === socket);
+exports.removeUserSocket = (socket) => {
+  const userId = Object.keys(userSocketMap).find(
+    (key) => userSocketMap[key] === socket,
+  );
   if (userId) {
     delete userSocketMap[userId];
   }
 };
-const doesUserExist = (userId) => {
+exports.doesUserExist = (userId) => {
   return userSocketMap.hasOwnProperty(userId);
 };
-const getUserSocket = (userId) => userSocketMap[userId];
-const notifyUser=(userId,data)=>{
-    if(doesUserExist(userId)){
-        userSocketMap[userId].emit("Notification",data)
-    }
-}
-
-export { addUserSocket, removeUserSocket, getUserSocket,doesUserExist,notifyUser};
+exports.getUserSocket = (userId) => userSocketMap[userId];
+exports.notifyUser = (userId, data) => {
+  if (doesUserExist(userId)) {
+    userSocketMap[userId].emit('Notification', data);
+  }
+};
