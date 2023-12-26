@@ -3,14 +3,8 @@ const router = express.Router();
 const resourcesController = require('../controllers/resourcesController');
 const { authenticateUser } = require('../middlewares/authentication');
 
-// GET all educational resources
 router.get('/', resourcesController.getAllResources);
-
-// GET resource by ID
 router.get('/:resourceId', resourcesController.getResourceById);
-
-// Search resources
-router.get('/search', resourcesController.searchResources);
 
 // Filter resources by topic
 router.get('/topic/:topic', resourcesController.filterResourcesByTopic);
@@ -19,7 +13,7 @@ router.get('/topic/:topic', resourcesController.filterResourcesByTopic);
 router.get('/type/:type', resourcesController.filterResourcesByType);
 
 // Add a new resource (requires authentication)
-router.post('/', authenticateUser, resourcesController.addResource);
+router.post('/', authenticateUser, resourcesController.createResource);
 
 // Update resource information (requires authentication)
 router.put(
@@ -34,11 +28,5 @@ router.delete(
   authenticateUser,
   resourcesController.deleteResource,
 );
-
-// GET popular resources
-router.get('/popular', resourcesController.getPopularResources);
-
-// GET recently added resources
-router.get('/recent', resourcesController.getRecentResources);
 
 module.exports = router;

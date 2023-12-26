@@ -4,7 +4,7 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: '12345678',
-  database: 'ecotrack', // Change this to your actual database name
+  database: 'ecotrack',
 });
 
 class ResourceRepository {
@@ -23,8 +23,8 @@ class ResourceRepository {
   getResourceById(resourceId) {
     return new Promise((resolve, reject) => {
       db.query(
-        'SELECT * FROM Resources WHERE resourceId = ?',
-        [resourceId],
+        'SELECT * FROM resources WHERE resourceId = ?',
+        resourceId,
         (error, results) => {
           if (error) {
             reject('Error fetching resource from the database.');
@@ -38,23 +38,30 @@ class ResourceRepository {
 
   createResource({ title, description, url, type, topic, author }) {
     return new Promise((resolve, reject) => {
+      // Check if a resource with the same title already exists
       db.query(
-        'INSERT INTO Resources (title, description, url, type, topic, author) VALUES (?, ?, ?, ?, ?, ?)',
-        [title, description, url, type, topic, author],
-        (error, results) => {
-          if (error) {
-            reject('Error creating resource in the database.');
+        'SELECT * FROM Resources WHERE title = ?',
+        [title],
+        (checkError, checkResults) => {
+          if (checkError) {
+            reject('Error checking existing resource in the database.');
+          } else if (checkResults.length > 0) {
+            // A resource with the same title already exists
+            reject('Resource with the same title already exists.');
           } else {
-            const newResourceId = results.insertId;
-            resolve({
-              resourceId: newResourceId,
-              title,
-              description,
-              url,
-              type,
-              topic,
-              author,
-            });
+            // No existing resource with the same title, proceed with insertion
+            db.query(
+              'INSERT INTO Resources (title, description, url, type, topic, author) VALUES (?, ?, ?, ?, ?, ?)',
+              [title, description, url, type, topic, author],
+              (insertError, results) => {
+                if (insertError) {
+                  reject('Error creating resource in the database.');
+                } else {
+                  const newResourceId = results.insertId;
+                  resolve('Resource created successfully');
+                }
+              },
+            );
           }
         },
       );
@@ -64,15 +71,19 @@ class ResourceRepository {
   updateResource(resourceId, updatedFields) {
     return new Promise((resolve, reject) => {
       const updateQuery = 'UPDATE Resources SET ? WHERE resourceId = ?';
-      db.query(updateQuery, [updatedFields, resourceId], (error, results) => {
-        if (error) {
-          reject('Error updating resource in the database.');
-        } else if (results.affectedRows === 0) {
-          resolve(null); // No rows affected means the resource was not found
-        } else {
-          resolve({ resourceId, ...updatedFields });
-        }
-      });
+      db.query(
+        updateQuery,
+        [updatedFields, resourceId.resourceId],
+        (error, results) => {
+          if (error) {
+            reject('Error updating resource in the database.');
+          } else if (results.affectedRows === 0) {
+            resolve(null); // No rows affected means the resource was not found
+          } else {
+            resolve({ resourceId, ...updatedFields });
+          }
+        },
+      );
     });
   }
 
@@ -80,7 +91,7 @@ class ResourceRepository {
     return new Promise((resolve, reject) => {
       db.query(
         'DELETE FROM Resources WHERE resourceId = ?',
-        [resourceId],
+        [resourceId.resourceId],
         (error, results) => {
           if (error) {
             reject('Error deleting resource from the database.');
@@ -88,6 +99,40 @@ class ResourceRepository {
             resolve(null); // No rows affected means the resource was not found
           } else {
             resolve({ resourceId });
+          }
+        },
+      );
+    });
+  }
+
+  filterResourcesByTopic(topic) {
+    return new Promise((resolve, reject) => {
+      console.log(topic);
+      console.log(topic.topic);
+      db.query(
+        'SELECT * FROM Resources WHERE topic = ?',
+        [topic.topic],
+        (error, results) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(results);
+          }
+        },
+      );
+    });
+  }
+
+  filterResourcesByType(type) {
+    return new Promise((resolve, reject) => {
+      db.query(
+        'SELECT * FROM Resources WHERE type = ?',
+        [type.type],
+        (error, results) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(results);
           }
         },
       );

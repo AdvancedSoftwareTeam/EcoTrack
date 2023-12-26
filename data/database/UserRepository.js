@@ -661,6 +661,36 @@ class UserRepository {
         res.status(status).json({ message: error.message });
       });
   }
+
+  getUserInterests(userId) {
+    return new Promise((resolve, reject) => {
+      // Check if the user exists and is active
+      db.query(
+        'SELECT interests FROM User WHERE userID = ? AND active = 1',
+        [userId],
+        (error, results) => {
+          console.log('testtttttttttttt');
+          console.log(results);
+          if (error) {
+            console.error('Error fetching user interests:', error);
+            return reject('Internal server error.');
+          }
+
+          if (results.length === 0) {
+            return resolve([]); // User not found or has no interests
+          }
+
+          try {
+            // Assuming interests is stored as a JSON field in the database
+            return resolve(results[0]);
+          } catch (parseError) {
+            console.error('Error parsing user interests:', parseError);
+            return reject('Error parsing user interests.');
+          }
+        },
+      );
+    });
+  }
 }
 
 module.exports = UserRepository;

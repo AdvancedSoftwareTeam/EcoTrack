@@ -1,4 +1,12 @@
-const db = require('../dbConfig');
+const mysql = require('mysql2');
+require('dotenv').config();
+
+const db = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: '12345678',
+  database: 'ecotrack',
+});
 
 const ReportModel = {
   createReport: (userID, issue, description) => {
