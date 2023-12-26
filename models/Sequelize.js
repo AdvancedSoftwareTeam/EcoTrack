@@ -5,7 +5,7 @@ const sequelize = new Sequelize({
   host: 'localhost',
   username: 'root',
   password: '12345678',
-  database: 'ecotrack',
+  database: 'echotrack',
 });
 
 async function testDatabaseConnection() {

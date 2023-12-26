@@ -21,4 +21,4 @@ const notifyUser=(userId,data)=>{
     }
 }
 
-export { addUserSocket, removeUserSocket, getUserSocket,doesUserExist,notifyUser};
+module.exports = { addUserSocket, removeUserSocket, getUserSocket,doesUserExist,notifyUser};

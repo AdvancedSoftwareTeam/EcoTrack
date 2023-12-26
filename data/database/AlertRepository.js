@@ -6,7 +6,7 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: '12345678',
-  database: 'ecotrack',
+  database: 'echotrack',
 });
 class AlertRepository {
   async getAllAlerts() {
@@ -52,5 +52,37 @@ class AlertRepository {
     this.getAllAlerts();
     return res.status(200).json('added');
   }
+
+  updateAlert(req, res) {
+    const { AlertID, AlertThresholds, AlertType, AlertName, UserID } = req.body;
+    db.query(
+      'UPDATE alalerts SET UserID = ?, AlertName = ?, AlertType = ?, AlertThresholds = ? WHERE AlertID = ?',
+      [UserID, AlertName, AlertType, AlertThresholds, AlertID],
+      (updateError) => {
+        if (updateError) {
+          console.log(updateError);
+          return res.status(500).json({ error: 'Failed to update alert' });
+        }
+        this.getAllAlerts();
+        return res.status(200).json('updated');
+      },
+    );
+  }
+  deleteAlert(req, res) {
+    const { AlertID } = req.body;
+    db.query(
+      'DELETE FROM alalerts WHERE AlertID = ?',
+      [AlertID],
+      (deleteError) => {
+        if (deleteError) {
+          console.log(deleteError);
+          return res.status(500).json({ error: 'Failed to delete alert' });
+        }
+        this.getAllAlerts(); // Refresh the alerts after deletion if needed
+        return res.status(200).json('deleted');
+      },
+    );
+  }
 }
+
 module.exports = AlertRepository;
