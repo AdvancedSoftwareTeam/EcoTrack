@@ -696,13 +696,13 @@ class UserRepository {
   getUserType(userId) {
     return new Promise((resolve, reject) => {
       db.query(
-        'SELECT type FROM Users WHERE userId = ? and Active = 1',
+        'SELECT userType FROM User WHERE userId = ?',
         [userId],
         (error, results) => {
           if (error) {
             reject('Error fetching user type from the database.');
           } else {
-            const userType = results.length > 0 ? results[0].userType : null;
+            const userType = results[0]?.userType;
             resolve(userType);
           }
         },

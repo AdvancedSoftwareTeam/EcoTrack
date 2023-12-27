@@ -2,12 +2,29 @@ const UserRepository = require('../data/database/UserRepository');
 
 const userRepository = new UserRepository();
 
-exports.authenticateAdmin = (req, res, next) => {
+exports.authenticateAdmin = async (req, res, next) => {
   const userId = req.session.userId;
-  if (userId && userRepository.getUserType(userId) === 'admin') {
-    next();
-  } else {
-    // User is not logged in, deny access
-    res.status(401).json({ message: 'Unauthorized, You are not an admin!' });
+
+  try {
+    if (userId) {
+      const userType = await userRepository.getUserType(userId);
+
+      if (userType === 'admin') {
+        // User is an admin, proceed to the next middleware or route handler
+        next();
+      } else {
+        // User is not an admin, deny access
+        res
+          .status(401)
+          .json({ message: 'Unauthorized, You are not an admin!' });
+      }
+    } else {
+      // User is not logged in, deny access
+      res.status(401).json({ message: 'Unauthorized, You are not logged in!' });
+    }
+  } catch (error) {
+    // Handle errors in the authenticateAdmin middleware
+    console.error('Error in authenticateAdmin:', error);
+    res.status(500).json({ message: 'Internal server error.' });
   }
 };
