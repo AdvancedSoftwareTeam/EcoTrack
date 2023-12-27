@@ -1,7 +1,8 @@
 const mysql = require('mysql2');
 const { notifyUser } = require('../../services/SocketService');
 let alertsMap = {};
-let allAlerts = [];
+const NotificationRepo=require("../database/NotificationRepo")
+const notRepo=new NotificationRepo();
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
@@ -9,12 +10,19 @@ const db = mysql.createConnection({
   database: 'ecotrack',
 });
 class AlertRepository {
-  async getAllAlerts() {
+  constructor(){
+    this.getAllAlerts()
+  }
+   allAlerts = [];
+   getAllAlerts() {
     db.query('SELECT * FROM alalerts', (error, results) => {
       if (error) {
         return res.status(500).json({ message: 'Internal server error.' });
       }
+      
+      let a=[];
       for (let i of results) {
+        a.push(i);
         if (!alertsMap.hasOwnProperty(i['UserID'])) {
           alertsMap[i['UserID']] = [];
         }
@@ -22,14 +30,22 @@ class AlertRepository {
         alertss.push(i);
         alertsMap[i['UserID']] = alertss;
       }
-      allAlerts = results;
+      this.allAlerts = results;
+      
+      return a;
     });
   }
-  checkAlerts(req, res) {
+  async checkAlerts(req, res)  {
+  
+    let allAler=  this.getAllAlerts()
     const { DataType, DataValue } = req.body;
-    for (let i of allAlerts) {
+    
+    for (let i of this.allAlerts) {
+      
       if (i['AlertType'] === DataType) {
         if (i['AlertThresholds'] <= DataValue) {
+          
+          notRepo.createNotification(i["UserID"],"Alert",`${DataType} has exceeded the limit ${i['AlertThresholds']},\n and the Value now is ${DataValue}`,new Date(),0);
           notifyUser(
             i['UserID'],
             `${DataType} has exceeded the limit ${i['AlertThresholds']},\n and the Value now is ${DataValue}`,
@@ -53,11 +69,11 @@ class AlertRepository {
     return res.status(200).json('added');
   }
 
-  /*updateAlert(req, res) {
-    const { AlertID, AlertThresholds, AlertType, AlertName, UserID } = req.body;
+  updateAlert(req, res) {
+    const { AlertID, AlertThresholds, AlertType, AlertName } = req.body;
     db.query(
-      'UPDATE alalerts SET UserID = ?, AlertName = ?, AlertType = ?, AlertThresholds = ? WHERE AlertID = ?',
-      [UserID, AlertName, AlertType, AlertThresholds, AlertID],
+      'UPDATE alalerts SET AlertName = ?, AlertType = ?, AlertThresholds = ? WHERE AlertID = ?',
+      [AlertName, AlertType, AlertThresholds, AlertID],
       (updateError) => {
         if (updateError) {
           console.log(updateError);
@@ -83,6 +99,6 @@ class AlertRepository {
         return res.status(200).json('deleted');
       },
     );
-  }*/
+  }
 }
 module.exports = AlertRepository;

@@ -17,7 +17,7 @@ exports.doesUserExist = (userId) => {
 };
 exports.getUserSocket = (userId) => userSocketMap[userId];
 exports.notifyUser = (userId, data) => {
-  if (doesUserExist(userId)) {
+  if (userSocketMap.hasOwnProperty(userId)) {
     userSocketMap[userId].emit('Notification', data);
   }
 };
