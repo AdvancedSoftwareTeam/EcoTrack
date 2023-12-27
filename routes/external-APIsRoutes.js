@@ -1,6 +1,6 @@
 const express = require('express');
 const externalAPIsController = require('../controllers/external-APIsController');
-const { authenticateUser } = require('../middlewares/authentication');
+const { authenticateUser } = require('../middlewares/authenticateUser');
 
 const router = express.Router();
 

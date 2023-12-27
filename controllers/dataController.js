@@ -1,17 +1,16 @@
 const DataRepository = require('../data/database/DataRepository');
-//const { validationResult, body } = require('express-validator');
+const AlertRepository = require('../data/database/AlertRepository');
 const dataRepository = new DataRepository();
 
 exports.submitData = async (req, res) => {
-  dataRepository
-    .submitData(req, res)
-    .then((message) => {
-      res.status(201).json({ message });
-      alertsRepo.checkAlerts(req,res);
-    })
-    .catch((error) => {
-      res.status(400).json({ message: error });
-    });
+  try {
+    const message = await dataRepository.submitData(req, res);
+    //AlertRepository.checkAlerts(req, res);
+    console.log(message);
+    res.status(201).json({ message });
+  } catch (error) {
+    res.status(400).json({ message: error });
+  }
 };
 
 exports.uploadData = (req, res) => {

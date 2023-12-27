@@ -691,6 +691,24 @@ class UserRepository {
       );
     });
   }
+
+  // for middlewares
+  getUserType(userId) {
+    return new Promise((resolve, reject) => {
+      db.query(
+        'SELECT type FROM Users WHERE userId = ? and Active = 1',
+        [userId],
+        (error, results) => {
+          if (error) {
+            reject('Error fetching user type from the database.');
+          } else {
+            const userType = results.length > 0 ? results[0].userType : null;
+            resolve(userType);
+          }
+        },
+      );
+    });
+  }
 }
 
 module.exports = UserRepository;

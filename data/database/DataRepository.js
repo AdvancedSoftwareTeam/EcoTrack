@@ -19,14 +19,6 @@ class DataRepository {
     const { DataType, DataValue, Description, DataSource } = req.body;
 
     const userId = req.session.userId;
-    if (!userId) {
-      const unAuthError = 'User not authenticated.';
-      console.error(unAuthError);
-      return res.status(401).json({ message: unAuthError });
-    }
-    //const latitude = Location.latitude;
-    //const longitude = Location.longitude;
-    //const locationPoint = `POINT(${latitude} ${longitude})`;
 
     return new Promise((resolve, reject) => {
       const timestamp = new Date();
@@ -39,8 +31,13 @@ class DataRepository {
             const err = `Error inserting into the database: ${error.message}`;
             return reject(err);
           }
-          res.setHeader('Content-Type', 'application/json');
-          return resolve('Data submitted successfully.');
+
+          // Assuming you have some meaningful data to return, adjust as needed
+          const responseData = {
+            insertedId: results.insertId,
+            message: 'Data submitted successfully.',
+          };
+          return resolve(responseData);
         },
       );
     });
@@ -48,10 +45,6 @@ class DataRepository {
 
   getData(req, res) {
     const userId = req.session.userId;
-
-    if (!userId) {
-      return res.status(401).json({ message: 'User not authenticated.' });
-    }
 
     db.query(
       'SELECT DataType, DataValue, Timestamp FROM data WHERE userId = ?',
