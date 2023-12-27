@@ -5,16 +5,18 @@ exports.searchOpenData = async (req, res) => {
   dataRepository.searchOpenData(req, res);
 };
 
-exports.searchOpenDataByDataType = (req, res) => {
-  dataRepository.searchOpenDataByDataType(req, res);
+exports.searchOpenDataByAccessId = (req, res) => {
+  dataRepository.searchOpenDataByAccessId(req, res);
 };
 
 exports.performAnalysis = async (req, res) => {
   dataRepository.performAnalysis(req, res);
 };
+
 exports.performAnalysisbyDataType = async (req, res) => {
   dataRepository.performAnalysisbyDataType(req, res);
 };
+
 exports.submitAnalysis = (req, res) => {
   dataRepository
     .submitAnalysis(req, res)

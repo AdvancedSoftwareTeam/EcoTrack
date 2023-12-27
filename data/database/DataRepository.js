@@ -119,18 +119,12 @@ class DataRepository {
     });
   }
 
-  searchOpenDataByDataType(req, res) {
-    const userId = req.session.userId;
-    const { DataType } = req.params;
-    if (!userId) {
-      return res
-        .status(401)
-        .json({ message: ' researchers/scientists not authenticated.' });
-    }
+  searchOpenDataByAccessId(req, res) {
+    const { AccessId } = req.params;
 
     db.query(
-      'SELECT * FROM opendata WHERE DataType = ?',
-      [DataType],
+      'SELECT * FROM opendata WHERE AccessID = ?',
+      [AccessId],
       (error, results) => {
         if (error) {
           return res.status(500).json({ message: 'Internal server error.' });
@@ -155,10 +149,6 @@ class DataRepository {
   /////////////////////////////////
   performAnalysisbyDataType(req, res) {
     try {
-      const userId = req.session.userId;
-      if (!userId) {
-        return res.status(401).json({ message: 'User not authenticated.' });
-      }
       const { DataType } = req.params;
       const query1 =
         'SELECT MAX(DataValue) AS max FROM data WHERE DataType =? ';
