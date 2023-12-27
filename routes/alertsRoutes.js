@@ -1,8 +1,8 @@
 const express = require('express');
-const alertController = require('../controllers/alertsController');
+const alertsController = require('../controllers/alertsController');
 const router = express.Router();
 
-router.post('/addAlert', alertController.addAlerts);
-//router.put('/updateAlert', alertController.updateAlerts);
-//router.delete('/deleteAlert', alertController.deleteAlerts);
+router.post('/addAlert', alertsController.addAlerts);
+router.put('/updateAlert', alertsController.updateAlerts);
+router.delete('/deleteAlert', alertsController.deleteAlerts);
 module.exports = router;
