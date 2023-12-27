@@ -1,31 +1,44 @@
 const express = require('express');
 const router = express.Router();
 const resourcesController = require('../controllers/resourcesController');
-const { authenticateUser } = require('../middlewares/authentication');
+const { authenticateAdmin } = require('../middlewares/authenticateAdmin');
+const { authenticateUser } = require('../middlewares/authenticateUser');
 
-router.get('/', resourcesController.getAllResources);
-router.get('/:resourceId', resourcesController.getResourceById);
+router.get('/', authenticateUser, resourcesController.getAllResources);
+router.get(
+  '/:resourceId',
+  authenticateUser,
+  resourcesController.getResourceById,
+);
 
 // Filter resources by topic
-router.get('/topic/:topic', resourcesController.filterResourcesByTopic);
+router.get(
+  '/topic/:topic',
+  authenticateUser,
+  resourcesController.filterResourcesByTopic,
+);
 
 // Filter resources by type
-router.get('/type/:type', resourcesController.filterResourcesByType);
+router.get(
+  '/type/:type',
+  authenticateUser,
+  resourcesController.filterResourcesByType,
+);
 
 // Add a new resource (requires authentication)
-router.post('/', authenticateUser, resourcesController.createResource);
+router.post('/', authenticateAdmin, resourcesController.createResource);
 
 // Update resource information (requires authentication)
 router.put(
   '/:resourceId',
-  authenticateUser,
+  authenticateAdmin,
   resourcesController.updateResource,
 );
 
 // Delete a resource (requires authentication)
 router.delete(
   '/:resourceId',
-  authenticateUser,
+  authenticateAdmin,
   resourcesController.deleteResource,
 );
 

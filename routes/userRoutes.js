@@ -1,6 +1,6 @@
 const express = require('express');
 const userController = require('../controllers/userController');
-const { authenticateUser } = require('../middlewares/authentication');
+const { authenticateUser } = require('../middlewares/authenticateUser');
 const authController = require('../controllers/authController');
 
 const router = express.Router();
@@ -41,6 +41,6 @@ router.post('/sendMessage', authenticateUser, userController.sendMessage);
 router.get('/search/:username', authenticateUser, userController.searchUser);
 
 // // Route to log out (invalidate the token or session)
-router.post('/logout', authenticateUser.userController.logoutUser);
+router.post('/logout', authenticateUser, userController.logoutUser);
 
 module.exports = router;

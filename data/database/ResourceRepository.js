@@ -57,8 +57,22 @@ class ResourceRepository {
                 if (insertError) {
                   reject('Error creating resource in the database.');
                 } else {
-                  const newResourceId = results.insertId;
-                  resolve('Resource created successfully');
+                  // Retrieve the newly created resource
+                  db.query(
+                    'SELECT * FROM Resources WHERE resourceId = ?',
+                    [results.insertId],
+                    (selectError, selectResults) => {
+                      if (selectError) {
+                        reject(
+                          'Error fetching newly created resource from the database.',
+                        );
+                      } else {
+                        const newResource =
+                          selectResults.length > 0 ? selectResults[0] : null;
+                        resolve(newResource);
+                      }
+                    },
+                  );
                 }
               },
             );

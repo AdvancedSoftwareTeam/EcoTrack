@@ -231,22 +231,4 @@ exports.filterResourcesByType = async (req, res) => {
     console.error('Error filtering resources by type:', error);
     res.status(500).json({ message: 'Internal server error.' });
   }
-
-  exports.getPopularResources = async (req, res) => {
-    try {
-      // Retrieve popular resources from the repository
-      const popularResources = await resourceRepository.getPopularResources();
-
-      // Check if any popular resources were found
-      if (popularResources.length === 0) {
-        return res.status(404).json({ message: 'No popular resources found.' });
-      }
-
-      // Return the popular resources as a JSON response
-      return res.json({ popularResources });
-    } catch (error) {
-      console.error('Error retrieving popular resources:', error);
-      return res.status(500).json({ message: 'Internal server error.' });
-    }
-  };
 };

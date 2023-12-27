@@ -1,6 +1,6 @@
 const express = require('express');
 const dataController = require('../controllers/dataController');
-const { authenticateUser } = require('../middlewares/authentication');
+const { authenticateUser } = require('../middlewares/authenticateUser');
 const router = express.Router();
 
 router.post('/submit', authenticateUser, dataController.submitData);
