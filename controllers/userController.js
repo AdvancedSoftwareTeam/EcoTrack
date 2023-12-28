@@ -69,7 +69,7 @@ exports.addInterests = async (req, res) => {
     await userRepository.addInterests(userId, interests);
 
     // Send a success response
-    res.status(200).json({ message: 'Interests added successfully.' });
+    res.status(201).json({ message: 'Interests added successfully.' });
   } catch (error) {
     // Handle errors and send an appropriate response
     console.error('Error adding interests:', error);
