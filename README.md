@@ -1,6 +1,6 @@
 # EcoTrack: Environmental Monitoring and Reporting Platform
 
-The goal of EcoTrack, an innovative environmental monitoring and reporting platform, is to completely transform the gathering, handling, and dissemination of environmental data. EcoTrack, a backend API, was created with the goal of meeting the increasing demand for all-encompassing solutions in the environmental sector by offering a strong framework for user interaction, data aggregation, and informative reporting.
+EcoTrack is a cutting-edge platform for environmental reporting and monitoring; it manages the distribution of environmental data and modifies it. This platform, a backend API built with Node.js, was developed to provide a robust framework for user interaction, data collection, and insightful reporting to satisfy the growing need for all-encompassing environmental solutions.
 
 ## Table of Contents
 
