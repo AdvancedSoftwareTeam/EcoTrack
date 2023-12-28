@@ -1,11 +1,12 @@
 /* eslint-disable import/no-extraneous-dependencies */
 const express = require('express');
-const sessionConfig = require('./middlewares/sessionConfig'); // Import the session configuration module
-const http = require('http');
 const { Server } = require('socket.io');
+const http = require('http');
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+const sessionConfig = require('./middlewares/sessionConfig'); // Import the session configuration module
 
 app.use(express.json());
 app.use(sessionConfig);
