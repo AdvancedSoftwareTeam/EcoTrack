@@ -1,6 +1,6 @@
 const express = require('express');
 const userController = require('../controllers/userController');
-const { authenticateUser } = require('../middlewares/authentication');
+const { authenticateUser } = require('../middlewares/authenticateUser');
 const authController = require('../controllers/authController');
 
 const router = express.Router();
@@ -20,13 +20,33 @@ router.delete(
   authenticateUser,
   userController.deactivateAccount,
 );
-router.get('/interactions', userController.getUserInteractions);
-router.get('/contributions', userController.getUsersContributions);
+
+router.get('/sameUsers', authenticateUser, userController.getSameUsers);
+router.post('/interests', authenticateUser, userController.addInterests);
+router.get('/interests', authenticateUser, userController.getInterests);
+router.post(
+  '/contribution',
+  authenticateUser,
+  userController.createContribution,
+);
+router.get(
+  '/contributions',
+  authenticateUser,
+  userController.getUsersContributions,
+);
+
+router.get(
+  '/receivedMessages',
+  authenticateUser,
+  userController.getReceivedMessages,
+);
+router.get('/sentMessages', authenticateUser, userController.getSentMessages);
+router.post('/sendMessage', authenticateUser, userController.sendMessage);
 
 // Route to search for users
 router.get('/search/:username', authenticateUser, userController.searchUser);
 
 // // Route to log out (invalidate the token or session)
-router.post('/logout', userController.logoutUser);
+router.get('/logout', authenticateUser, userController.logoutUser);
 
 module.exports = router;

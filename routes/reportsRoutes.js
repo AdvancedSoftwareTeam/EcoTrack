@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const ReportController = require('../controllers/reportsController');
+const ReportController = require('../controllers/reportController');
+const { authenticateUser } = require('../middlewares/authenticateUser');
 
-router.post('/reports', ReportController.createReport);
-router.get('/reports', ReportController.getAllReports);
-router.delete('/reports/:reportID', ReportController.deleteReport);
+router.post('/', authenticateUser, ReportController.createReport);
+router.get('/', authenticateUser, ReportController.getAllReports);
+router.delete('/:reportID', authenticateUser, ReportController.deleteReport);
 
 module.exports = router;

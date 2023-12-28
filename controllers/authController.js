@@ -9,7 +9,23 @@ exports.signup = catchAsync(async (req, res, next) => {
     Password: req.body.password,
   };
 
-  bcrypt.hash(newUser.Password, 10, (hashError, hashedPassword) => {
+  // Check if the username or email already exists
+  const existingUser = await sequelize.query(
+    'SELECT * FROM User WHERE Username = ? OR Email = ?',
+    {
+      replacements: [newUser.Username, newUser.Email],
+      type: sequelize.QueryTypes.SELECT,
+    },
+  );
+
+  if (existingUser.length > 0) {
+    return res.status(409).json({
+      status: 'error',
+      message: 'Username or email already exists.',
+    });
+  }
+
+  bcrypt.hash(newUser.Password, 10, async (hashError, hashedPassword) => {
     if (hashError) {
       console.error('Error hashing the password:', hashError);
       return res.status(500).json({
@@ -21,8 +37,8 @@ exports.signup = catchAsync(async (req, res, next) => {
     newUser.Password = hashedPassword;
     const date = new Date();
 
-    sequelize
-      .query(
+    try {
+      await sequelize.query(
         'INSERT INTO User (Username, Email, Password, ProfilePicture, Location, Interests, SustainabilityScore, RegistrationDate, LastLoginDate, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         {
           replacements: [
@@ -39,21 +55,18 @@ exports.signup = catchAsync(async (req, res, next) => {
           ],
           type: sequelize.QueryTypes.INSERT,
         },
-      )
-      .then(() => {
-        res.status(201).json({
-          status: 'success',
-          data: {
-            user: newUser,
-          },
-        });
-      })
-      .catch((insertError) => {
-        console.error('Error inserting into the database:', insertError);
-        res.status(500).json({
-          status: 'error',
-          message: 'Error inserting into the database',
-        });
+      );
+
+      res.status(201).json({
+        status: 'success',
+        message: 'User created successfully.',
       });
+    } catch (insertError) {
+      console.error('Error inserting into the database:', insertError);
+      res.status(500).json({
+        status: 'error',
+        message: 'Error inserting into the database',
+      });
+    }
   });
 });

@@ -102,7 +102,7 @@ class UserRepository {
 
   loginUser(req, res) {
     if (req.session.userId) {
-      return res.status(500).json({ message: 'User is already logged in.' });
+      return res.status(208).json({ message: 'User is already logged in.' }); //already reported : 208
     }
     const { email, password } = req.body;
 
@@ -664,8 +664,332 @@ class UserRepository {
             );
           },
         );
+
+        }
+
+        // User exists and is active, proceed to retrieve contributions
+        db.query(
+          'SELECT * FROM Contributions WHERE userID = ?',
+          [userId],
+          (contribError, contribResults) => {
+            if (contribError) {
+              return res
+                .status(500)
+                .json({ message: 'Failed to retrieve contributions.' });
+            }
+
+            // Return the contributions as JSON response
+            return res.json({ contributions: contribResults });
+          },
+        );
       },
     );
+  }
+
+ 
+
+  getReceivedMessages(req, res) {
+    const { userId } = req.session;
+
+    // Check if the user exists and is active
+    db.query(
+      'SELECT * FROM User WHERE userID = ? AND active = 1',
+      [userId],
+      (userError, userResults) => {
+        if (userError) {
+          return res.status(500).json({ message: 'Internal server error.' });
+        }
+
+        if (userResults.length === 0) {
+          return res
+            .status(404)
+            .json({ message: 'User not found or not active.' });
+        }
+
+        // User exists and is active, proceed to retrieve received messages
+        db.query(
+          'SELECT received_messages FROM User WHERE userID = ?',
+          [userId],
+          (getError, getResults) => {
+            if (getError) {
+              return res
+                .status(500)
+                .json({ message: 'Failed to retrieve received messages.' });
+            }
+
+            // Check if received_messages is not undefined or null
+            if (getResults[0].received_messages) {
+              try {
+                // Attempt to parse the received_messages as JSON
+                const receivedMessages = getResults[0].received_messages;
+
+                // Check if the parsed data is an array
+                if (Array.isArray(receivedMessages)) {
+                  // Modify the structure to include source user information
+                  const messagesWithSource = receivedMessages.map(
+                    (message) => ({
+                      from: userResults[0].username, // Assuming 'username' is a unique identifier for users
+                      message,
+                    }),
+                  );
+
+                  return res.json({ receivedMessages: messagesWithSource });
+                } else {
+                  console.error(
+                    'Invalid received_messages data structure:',
+                    receivedMessages,
+                  );
+                  return res.status(500).json({
+                    message: 'Invalid received_messages data structure.',
+                  });
+                }
+              } catch (jsonParseError) {
+                console.error(
+                  'Error parsing received_messages:',
+                  jsonParseError,
+                );
+                return res
+                  .status(500)
+                  .json({ message: 'Error parsing received messages.' });
+              }
+            } else {
+              return res.json({ receivedMessages: [] });
+            }
+          },
+        );
+      },
+    );
+  }
+
+  getSentMessages(req, res) {
+    const { userId } = req.session;
+
+    // Check if the user exists and is active
+    db.query(
+      'SELECT * FROM User WHERE userID = ? AND active = 1',
+      [userId],
+      (userError, userResults) => {
+        if (userError) {
+          return res.status(500).json({ message: 'Internal server error.' });
+        }
+
+        if (userResults.length === 0) {
+          return res
+            .status(404)
+            .json({ message: 'User not found or not active.' });
+        }
+
+        // User exists and is active, proceed to retrieve contributions
+        db.query(
+          'SELECT sent_messages FROM User WHERE userID = ?',
+          [userId],
+          (getError, getResults) => {
+            if (getError) {
+              return res
+                .status(500)
+                .json({ message: 'Failed to retrieve contributions.' });
+            }
+
+            // Return the contributions as JSON response
+            return res.json({ sentMessages: getResults });
+          },
+        );
+      },
+    );
+  }
+
+  sendMessage(req, res) {
+    const { userId } = req.session;
+    const data = req.body;
+
+    // Function to execute a database query
+    const queryDatabase = (sql, params) => {
+      return new Promise((resolve, reject) => {
+        db.query(sql, params, (error, results) => {
+          if (error) {
+            console.error('Error:', error);
+            reject(error);
+          } else {
+            resolve(results);
+          }
+        });
+      });
+    };
+
+    let userResults;
+    let parsedExistingReceivedMessages; // Declare it at a higher scope
+
+    // Check if the user exists and is active
+    queryDatabase('SELECT * FROM User WHERE userID = ? AND active = 1', [
+      userId,
+    ])
+      .then((results) => {
+        userResults = results;
+        if (userResults.length === 0) {
+          throw { status: 404, message: 'User not found or not active.' };
+        }
+
+        if (!(data && data.to && data.content)) {
+          throw { status: 400, message: 'Invalid message data.' };
+        }
+
+        // Check if the recipient user exists
+        return queryDatabase('SELECT * FROM User WHERE username = ?', [
+          data.to,
+        ]);
+      })
+      .then((recipientResults) => {
+        if (recipientResults.length === 0) {
+          throw { status: 404, message: 'Recipient user not found.' };
+        }
+
+        const sentDate = new Date();
+
+        const existingSentMessages = recipientResults[0].sent_messages || '[]';
+        const existingReceivedMessages =
+          recipientResults[0].received_messages || '[]';
+
+        const parsedExistingSentMessages = existingSentMessages;
+        parsedExistingReceivedMessages = existingReceivedMessages;
+
+        console.log(userResults[0].Username);
+        console.log(userResults);
+
+        const newMessage = {
+          to: data.to,
+          content: data.content,
+          sentDate: sentDate.toISOString(),
+        };
+        const newMessage1 = {
+          from: userResults[0].Username,
+          content: data.content,
+          sentDate: sentDate.toISOString(),
+          senderInfo: {
+            Username: userResults[0].Username,
+          },
+        };
+
+        parsedExistingSentMessages.push(newMessage);
+        parsedExistingReceivedMessages.push(newMessage1);
+
+        // Update the recipient user's record in the database with the new sent_messages array
+        return queryDatabase(
+          'UPDATE User SET sent_messages = ? WHERE userID = ?',
+          [JSON.stringify(parsedExistingSentMessages), userId],
+        );
+      })
+      .then(() => {
+        // Update the sender user's record in the database with the new received_messages array
+        return queryDatabase(
+          'UPDATE User SET received_messages = ? WHERE username = ?',
+          [JSON.stringify(parsedExistingReceivedMessages), data.to],
+        );
+      })
+      .then(() => {
+        // Fetch the updated sent_messages array for the sender
+        return queryDatabase(
+          'SELECT sent_messages FROM User WHERE userID = ?',
+          [userId],
+        );
+      })
+      .then((senderRecord) => {
+        console.log(
+          'Sender Sent Messages after update:',
+          senderRecord[0].sent_messages,
+        );
+
+        // Send the response only after the database queries have been executed
+        res.status(200).json({
+          message: 'Message sent successfully.',
+          // Omit the sentMessages field if you don't want to return the list of sent messages
+        });
+      })
+      .catch((error) => {
+        const status = error.status || 500;
+        console.error('Error during message sending:', error);
+        res.status(status).json({ message: error.message });
+      });
+  }
+
+  getUserInterests(userId) {
+    return new Promise((resolve, reject) => {
+      // Check if the user exists and is active
+      db.query(
+        'SELECT interests FROM User WHERE userID = ? AND active = 1',
+        [userId],
+        (error, results) => {
+          if (error) {
+            console.error('Error fetching user interests:', error);
+            return reject('Internal server error.');
+          }
+
+          if (results.length === 0) {
+            return resolve([]); // User not found or has no interests
+          }
+
+          try {
+            // Parse the JSON data and handle potential errors
+            const parsedInterests = results[0].interests;
+            return resolve(parsedInterests);
+          } catch (parseError) {
+            console.error('Error parsing user interests:', parseError);
+            return reject('Error parsing user interests.');
+          }
+        },
+      );
+    });
+  }
+
+  addInterests(userId, interests) {
+    return new Promise((resolve, reject) => {
+      // Fetch existing interests from the database
+      this.getUserInterests(userId)
+        .then((existingInterests) => {
+          try {
+            // Assuming existing interests is an array stored in the JSON field
+            const combinedInterests = [...existingInterests, interests];
+
+            // Update the user's interests in the database
+            db.query(
+              'UPDATE User SET interests = ? WHERE userID = ? and Active = 1',
+              [JSON.stringify(combinedInterests), userId],
+              (updateError) => {
+                if (updateError) {
+                  console.error('Error updating user interests:', updateError);
+                  reject('Error updating user interests.');
+                } else {
+                  resolve('Interests added successfully.');
+                }
+              },
+            );
+          } catch (parseError) {
+            console.error('Error combining user interests:', parseError);
+            reject('Error combining user interests.');
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching existing interests:', error);
+          reject('Error fetching existing interests.');
+        });
+    });
+  }
+
+  // for middlewares
+  getUserType(userId) {
+    return new Promise((resolve, reject) => {
+      db.query(
+        'SELECT userType FROM User WHERE userId = ?',
+        [userId],
+        (error, results) => {
+          if (error) {
+            reject('Error fetching user type from the database.');
+          } else {
+            const userType = results[0]?.userType;
+            resolve(userType);
+          }
+        },
+      );
+    });
   }
 }
 
