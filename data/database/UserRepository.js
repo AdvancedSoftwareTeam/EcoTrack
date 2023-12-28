@@ -665,8 +665,6 @@ class UserRepository {
           },
         );
 
-        }
-
         // User exists and is active, proceed to retrieve contributions
         db.query(
           'SELECT * FROM Contributions WHERE userID = ?',
@@ -685,8 +683,6 @@ class UserRepository {
       },
     );
   }
-
- 
 
   getReceivedMessages(req, res) {
     const { userId } = req.session;

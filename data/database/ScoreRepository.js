@@ -114,7 +114,7 @@ class ScoreRepository {
         } else {
           db.query(
             'INSERT INTO scores (UserID, ScoreValue, Timestamp, ScoreDescription) VALUES (?, ?, ?, ?)',
-            [userId, newScore, timestamp, description],
+            [userId, newVal, timestamp, description],
             (insertError, insertResults) => {
               if (insertError) {
                 console.error(
@@ -149,12 +149,12 @@ class ScoreRepository {
         if (results.length === 0) {
           return res
             .status(404)
-            .json({ message: 'Submit data to start your score' });
+            .json({ message: 'Submit data to start your score!' });
         }
 
         const score = results;
         //  const description = 'your scored is increased \n';
-        return res.json({ Score: score });
+        return res.status(200).json({ Score: score });
       },
     );
   }
