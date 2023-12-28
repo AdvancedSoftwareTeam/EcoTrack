@@ -99,7 +99,7 @@ class UserRepository {
 
   loginUser(req, res) {
     if (req.session.userId) {
-      return res.status(500).json({ message: 'User is already logged in.' });
+      return res.status(208).json({ message: 'User is already logged in.' }); //already reported : 208
     }
     const { email, password } = req.body;
 
