@@ -669,8 +669,6 @@ class UserRepository {
         'SELECT interests FROM User WHERE userID = ? AND active = 1',
         [userId],
         (error, results) => {
-          console.log('testtttttttttttt');
-          console.log(results);
           if (error) {
             console.error('Error fetching user interests:', error);
             return reject('Internal server error.');
@@ -681,14 +679,49 @@ class UserRepository {
           }
 
           try {
-            // Assuming interests is stored as a JSON field in the database
-            return resolve(results[0]);
+            // Parse the JSON data and handle potential errors
+            const parsedInterests = results[0].interests;
+            return resolve(parsedInterests);
           } catch (parseError) {
             console.error('Error parsing user interests:', parseError);
             return reject('Error parsing user interests.');
           }
         },
       );
+    });
+  }
+
+  addInterests(userId, interests) {
+    return new Promise((resolve, reject) => {
+      // Fetch existing interests from the database
+      this.getUserInterests(userId)
+        .then((existingInterests) => {
+          try {
+            // Assuming existing interests is an array stored in the JSON field
+            const combinedInterests = [...existingInterests, interests];
+
+            // Update the user's interests in the database
+            db.query(
+              'UPDATE User SET interests = ? WHERE userID = ? and Active = 1',
+              [JSON.stringify(combinedInterests), userId],
+              (updateError) => {
+                if (updateError) {
+                  console.error('Error updating user interests:', updateError);
+                  reject('Error updating user interests.');
+                } else {
+                  resolve('Interests added successfully.');
+                }
+              },
+            );
+          } catch (parseError) {
+            console.error('Error combining user interests:', parseError);
+            reject('Error combining user interests.');
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching existing interests:', error);
+          reject('Error fetching existing interests.');
+        });
     });
   }
 

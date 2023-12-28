@@ -9,23 +9,28 @@ const db = mysql.createConnection({
 });
 
 const ReportModel = {
-  createReport: (userID, issue, description) => {
+  createReport: (userID, reportType, description, status) => {
+    const submitDate = new Date();
     return new Promise((resolve, reject) => {
       const query =
-        'INSERT INTO environmental_reports (userID, issue, description) VALUES (?, ?, ?)';
-      db.query(query, [userID, issue, description], (err, result) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result.insertId);
-        }
-      });
+        'INSERT INTO reports (userID, reportType, description, submitDate, status) VALUES (?, ?, ?, ?, ?)';
+      db.query(
+        query,
+        [userID, reportType, description, submitDate, status],
+        (err, result) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(result.insertId);
+          }
+        },
+      );
     });
   },
 
   getAllReports: () => {
     return new Promise((resolve, reject) => {
-      const query = 'SELECT * FROM environmental_reports';
+      const query = 'SELECT * FROM reports';
       db.query(query, (err, results) => {
         if (err) {
           reject(err);
@@ -38,12 +43,12 @@ const ReportModel = {
 
   deleteReport: (reportID) => {
     return new Promise((resolve, reject) => {
-      const query = 'DELETE FROM environmental_reports WHERE ID = ?';
+      const query = 'DELETE FROM reports WHERE reportID = ?';
       db.query(query, [reportID], (err, result) => {
         if (err) {
           reject(err);
         } else {
-          resolve(result.affectedRows);
+          resolve(1);
         }
       });
     });

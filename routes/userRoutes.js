@@ -22,12 +22,18 @@ router.delete(
 );
 
 router.get('/sameUsers', authenticateUser, userController.getSameUsers);
+router.post('/interests', authenticateUser, userController.addInterests);
+router.get('/interests', authenticateUser, userController.getInterests);
 router.post(
   '/contribution',
   authenticateUser,
   userController.createContribution,
 );
-router.get('/contributions', userController.getUsersContributions);
+router.get(
+  '/contributions',
+  authenticateUser,
+  userController.getUsersContributions,
+);
 
 router.get(
   '/receivedMessages',
