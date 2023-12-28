@@ -121,8 +121,6 @@ class ResourceRepository {
 
   filterResourcesByTopic(topic) {
     return new Promise((resolve, reject) => {
-      console.log(topic);
-      console.log(topic.topic);
       db.query(
         'SELECT * FROM Resources WHERE topic = ?',
         [topic.topic],

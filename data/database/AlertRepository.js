@@ -1,8 +1,8 @@
 const mysql = require('mysql2');
 const { notifyUser } = require('../../services/SocketService');
 let alertsMap = {};
-const NotificationRepo=require("../database/NotificationRepo")
-const notRepo=new NotificationRepo();
+const NotificationRepo = require('../database/NotificationRepo');
+const notRepo = new NotificationRepo();
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
@@ -10,17 +10,17 @@ const db = mysql.createConnection({
   database: 'ecotrack',
 });
 class AlertRepository {
-  constructor(){
-    this.getAllAlerts()
+  constructor() {
+    this.getAllAlerts();
   }
-   allAlerts = [];
-   getAllAlerts() {
+  allAlerts = [];
+  getAllAlerts() {
     db.query('SELECT * FROM alalerts', (error, results) => {
       if (error) {
         return res.status(500).json({ message: 'Internal server error.' });
       }
-      
-      let a=[];
+
+      let a = [];
       for (let i of results) {
         a.push(i);
         if (!alertsMap.hasOwnProperty(i['UserID'])) {
@@ -31,21 +31,24 @@ class AlertRepository {
         alertsMap[i['UserID']] = alertss;
       }
       this.allAlerts = results;
-      
+
       return a;
     });
   }
-  async checkAlerts(req, res)  {
-  
-    let allAler=  this.getAllAlerts()
+  async checkAlerts(req, res) {
+    let allAler = this.getAllAlerts();
     const { DataType, DataValue } = req.body;
-    
+
     for (let i of this.allAlerts) {
-      
       if (i['AlertType'] === DataType) {
         if (i['AlertThresholds'] <= DataValue) {
-          
-          notRepo.createNotification(i["UserID"],"Alert",`${DataType} has exceeded the limit ${i['AlertThresholds']},\n and the Value now is ${DataValue}`,new Date(),0);
+          notRepo.createNotification(
+            i['UserID'],
+            'Alert',
+            `${DataType} has exceeded the limit ${i['AlertThresholds']},\n and the Value now is ${DataValue}`,
+            new Date(),
+            0,
+          );
           notifyUser(
             i['UserID'],
             `${DataType} has exceeded the limit ${i['AlertThresholds']},\n and the Value now is ${DataValue}`,
@@ -66,7 +69,7 @@ class AlertRepository {
       },
     );
     this.getAllAlerts();
-    return res.status(200).json('added');
+    return res.status(200).json('Alert added successfully.');
   }
 
   updateAlert(req, res) {
@@ -80,7 +83,7 @@ class AlertRepository {
           return res.status(500).json({ error: 'Failed to update alert' });
         }
         this.getAllAlerts();
-        return res.status(200).json('updated');
+        return res.status(200).json('Alert updated successfully.');
       },
     );
   }
@@ -96,7 +99,7 @@ class AlertRepository {
           return res.status(500).json({ error: 'Failed to delete alert' });
         }
         this.getAllAlerts(); // Refresh the alerts after deletion if needed
-        return res.status(200).json('deleted');
+        return res.status(200).json('Alert deleted successfully.');
       },
     );
   }

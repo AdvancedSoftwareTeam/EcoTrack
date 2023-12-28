@@ -33,10 +33,11 @@ const ReportController = {
 
     try {
       const rowsAffected = await ReportModel.deleteReport(reportID);
+
       if (rowsAffected > 0) {
-        res.status(200).json({ message: 'Report deleted successfully' });
+        res.status(200).json({ message: 'Report deleted successfully.' });
       } else {
-        res.status(404).json({ message: 'Report not found' });
+        res.status(404).json({ message: 'Report not found.' });
       }
     } catch (error) {
       res.status(500).json({ error: error.message });

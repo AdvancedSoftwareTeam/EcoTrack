@@ -4,7 +4,11 @@ const { authenticateUser } = require('../middlewares/authenticateUser');
 
 const router = express.Router();
 
-router.get('/news/:topic', externalAPIsController.getNewsByTopic);
+router.get(
+  '/news/:topic',
+  authenticateUser,
+  externalAPIsController.getNewsByTopic,
+);
 router.get('/news', authenticateUser, externalAPIsController.getNews);
 
 module.exports = router;
