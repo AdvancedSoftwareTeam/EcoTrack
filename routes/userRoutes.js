@@ -47,6 +47,6 @@ router.post('/sendMessage', authenticateUser, userController.sendMessage);
 router.get('/search/:username', authenticateUser, userController.searchUser);
 
 // // Route to log out (invalidate the token or session)
-router.post('/logout', authenticateUser, userController.logoutUser);
+router.get('/logout', authenticateUser, userController.logoutUser);
 
 module.exports = router;
