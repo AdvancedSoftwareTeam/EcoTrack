@@ -34,10 +34,6 @@ EcoTrack serves as a robust backend API designed to handle environmental data co
 6. **Educational Resources:** Provides articles and guides on environmental topics to raise awareness and educate users.
 7. **Open Data Access:** Offers APIs for researchers, scientists, and organizations to access aggregated environmental data for research and analysis.
 
-### Additional Features:
-
-- **Socket.IO Integration:** Implemented for real-time alerts feature.
-- **External API Integration:** Utilized to enhance functionality and supplement data collection.
 
 ## Technologies Used
 
@@ -46,6 +42,8 @@ EcoTrack serves as a robust backend API designed to handle environmental data co
 - **MySQL:** Database for CRUD operations.
 - **Postman:** API building, testing and documentation tool.
 - **Git:** Version control system.
+- **Socket.IO:** Implemented for real-time alerts feature.
+- **External APIs:** making http requests using axios.
 
 ## Getting Started
 
