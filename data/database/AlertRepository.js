@@ -69,7 +69,7 @@ class AlertRepository {
       },
     );
     this.getAllAlerts();
-    return res.status(200).json('Alert added successfully.');
+    return res.status(200).json({ message: 'Alert added successfully.' });
   }
 
   updateAlert(req, res) {
@@ -83,7 +83,7 @@ class AlertRepository {
           return res.status(500).json({ error: 'Failed to update alert' });
         }
         this.getAllAlerts();
-        return res.status(200).json('Alert updated successfully.');
+        return res.status(200).json({ message: 'Alert updated successfully.' });
       },
     );
   }
@@ -99,7 +99,7 @@ class AlertRepository {
           return res.status(500).json({ error: 'Failed to delete alert' });
         }
         this.getAllAlerts(); // Refresh the alerts after deletion if needed
-        return res.status(200).json('Alert deleted successfully.');
+        return res.status(200).json({ message: 'Alert deleted successfully.' });
       },
     );
   }
