@@ -150,10 +150,10 @@ exports.createResource = async (req, res) => {
       author,
     });
 
-    res.status(201).json({ resource: newResource });
+    res.status(201).json({ message: 'Resources added successfully.' });
   } catch (error) {
     console.error('Error creating resource:', error);
-    res.status(500).json({ message: 'This resource title already exists.' });
+    res.status(409).json({ message: 'This resource title already exists.' });
   }
 };
 

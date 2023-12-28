@@ -425,7 +425,7 @@ class UserRepository {
               // You may perform additional actions or validations here
 
               // Send the response only after the database query has been executed
-              return res.json({
+              return res.status(201).json({
                 message: 'Contribution created successfully.',
               });
             },
@@ -650,7 +650,7 @@ class UserRepository {
         );
 
         // Send the response only after the database queries have been executed
-        res.json({
+        res.status(200).json({
           message: 'Message sent successfully.',
           // Omit the sentMessages field if you don't want to return the list of sent messages
         });
