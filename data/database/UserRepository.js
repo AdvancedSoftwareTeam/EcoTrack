@@ -426,7 +426,10 @@ class UserRepository {
                   .status(500)
                   .json({ message: 'Contribution creation failed.' });
               }
-              scoreRepository.updateOrInsertScore(userId, data.quantity, ' ');
+              scoreRepository.updateOrInsertContributionsScore(
+                userId,
+                scoreContr,
+              );
               // You may perform additional actions or validations here
 
               // Send the response only after the database query has been executed

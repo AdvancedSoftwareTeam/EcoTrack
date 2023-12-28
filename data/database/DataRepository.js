@@ -36,7 +36,7 @@ class DataRepository {
             return reject(err);
           }
 
-          scoreRepository.updateOrInsertScore(userId, DataValue, DataType);
+          scoreRepository.updateOrInsertDataScore(userId, DataValue, DataType);
 
           // Assuming you have some meaningful data to return, adjust as needed
           const responseData = {
