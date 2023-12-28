@@ -45,7 +45,7 @@ EcoTrack serves as a robust backend API designed to handle environmental data co
 
 To get started with EcoTrack API, follow these steps:
 
-1. Clone the repository: `git clone` <https://github.com/AdvancedSoftwareTeam/EcoTrack.git>
+1. Clone the repository: `git clone https://github.com/AdvancedSoftwareTeam/EcoTrack.git` 
 2. Install dependencies: `npm install`
 3. Configure environment variables.
 4. Run the application: `npm start`
@@ -74,7 +74,7 @@ We have employed Postman for comprehensive API testing to ensure the functionali
 
 click on the following link to watch the testing demo:
 
-- [**Watch Demo**]([https://documenter.getpostman.com/view/29528140/2s9YkuZyR9](https://drive.google.com/file/d/1IhVZ-JUvbNWw50SRC-YMC2zegsws5C2s/view?usp=sharing)https://drive.google.com/file/d/1IhVZ-JUvbNWw50SRC-YMC2zegsws5C2s/view?usp=sharing).
+- [Watch Demo]([https://documenter.getpostman.com/view/29528140/2s9YkuZyR9](https://drive.google.com/file/d/1IhVZ-JUvbNWw50SRC-YMC2zegsws5C2s/view?usp=sharing)https://drive.google.com/file/d/1IhVZ-JUvbNWw50SRC-YMC2zegsws5C2s/view?usp=sharing).
 
 ## Vision
 
