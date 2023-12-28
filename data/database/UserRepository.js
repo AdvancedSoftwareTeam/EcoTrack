@@ -1,4 +1,7 @@
 /* eslint-disable prefer-promise-reject-errors */
+const ScoreRepository = require('./ScoreRepository');
+const scoreRepository = new ScoreRepository();
+
 const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
 
@@ -397,6 +400,8 @@ class UserRepository {
         }
 
         const registrationDate = new Date(); // Get the current date and time
+        const scoringMultiplier = 0.1;
+        const scoreContr = data.quantity * scoringMultiplier;
 
         // Check if the 'data' object is defined and has the expected properties
         if (data) {
@@ -421,11 +426,11 @@ class UserRepository {
                   .status(500)
                   .json({ message: 'Contribution creation failed.' });
               }
-
+              scoreRepository.updateOrInsertScore(userId, data.quantity, ' ');
               // You may perform additional actions or validations here
 
               // Send the response only after the database query has been executed
-              return res.status(201).json({
+              return res.json({
                 message: 'Contribution created successfully.',
               });
             },
@@ -438,6 +443,250 @@ class UserRepository {
       },
     );
   }
+
+  getReceivedMessages(req, res) {
+    const { userId } = req.session;
+
+    // Check if the user exists and is active
+    db.query(
+      'SELECT * FROM User WHERE userID = ? AND active = 1',
+      [userId],
+      (userError, userResults) => {
+        if (userError) {
+          return res.status(500).json({ message: 'Internal server error.' });
+        }
+
+        if (userResults.length === 0) {
+          return res
+            .status(404)
+            .json({ message: 'User not found or not active.' });
+        }
+
+        // User exists and is active, proceed to retrieve received messages
+        db.query(
+          'SELECT received_messages FROM User WHERE userID = ?',
+          [userId],
+          (getError, getResults) => {
+            if (getError) {
+              return res
+                .status(500)
+                .json({ message: 'Failed to retrieve received messages.' });
+            }
+
+            // Check if received_messages is not undefined or null
+            if (getResults[0].received_messages) {
+              try {
+                // Attempt to parse the received_messages as JSON
+                const receivedMessages = JSON.parse(
+                  getResults[0].received_messages,
+                );
+
+                // Check if the parsed data is an array
+                if (Array.isArray(receivedMessages)) {
+                  // Modify the structure to include source user information
+                  const messagesWithSource = receivedMessages.map(
+                    (message) => ({
+                      from: userResults[0].username, // Assuming 'username' is a unique identifier for users
+                      message,
+                    }),
+                  );
+
+                  return res.json({ receivedMessages: messagesWithSource });
+                } else {
+                  console.error(
+                    'Invalid received_messages data structure:',
+                    receivedMessages,
+                  );
+                  return res.status(500).json({
+                    message: 'Invalid received_messages data structure.',
+                  });
+                }
+              } catch (jsonParseError) {
+                console.error(
+                  'Error parsing received_messages:',
+                  jsonParseError,
+                );
+                return res
+                  .status(500)
+                  .json({ message: 'Error parsing received messages.' });
+              }
+            } else {
+              return res.json({ receivedMessages: [] });
+            }
+          },
+        );
+      },
+    );
+  }
+
+  getSentMessages(req, res) {
+    const { userId } = req.session;
+
+    // Check if the user exists and is active
+    db.query(
+      'SELECT * FROM User WHERE userID = ? AND active = 1',
+      [userId],
+      (userError, userResults) => {
+        if (userError) {
+          return res.status(500).json({ message: 'Internal server error.' });
+        }
+
+        if (userResults.length === 0) {
+          return res
+            .status(404)
+            .json({ message: 'User not found or not active.' });
+        }
+
+        // User exists and is active, proceed to retrieve contributions
+        db.query(
+          'SELECT sent_messages FROM User WHERE userID = ?',
+          [userId],
+          (getError, getResults) => {
+            if (getError) {
+              return res
+                .status(500)
+                .json({ message: 'Failed to retrieve contributions.' });
+            }
+
+            // Return the contributions as JSON response
+            return res.json({ sentMessages: getResults });
+          },
+        );
+      },
+    );
+  }
+
+  sendMessage(req, res) {
+    const { userId } = req.session;
+    const data = req.body;
+
+    // Check if the user exists and is active
+    db.query(
+      'SELECT * FROM User WHERE userID = ? AND active = 1',
+      [userId],
+      (userError, userResults) => {
+        if (userError) {
+          console.error('Error:', userError);
+          return res.status(500).json({ message: 'Internal server error.' });
+        }
+
+        if (userResults.length === 0) {
+          return res
+            .status(404)
+            .json({ message: 'User not found or not active.' });
+        }
+
+        // Check if the 'data' object is defined and has the expected properties
+        if (!(data && data.to && data.content)) {
+          return res.status(400).json({ message: 'Invalid message data.' });
+        }
+
+        // Check if the recipient user exists
+        db.query(
+          'SELECT * FROM User WHERE username = ?',
+          [data.to],
+          (recipientError, recipientResults) => {
+            if (recipientError) {
+              console.error('Error:', recipientError);
+              return res
+                .status(500)
+                .json({ message: 'Internal server error.' });
+            }
+
+            if (recipientResults.length === 0) {
+              return res
+                .status(404)
+                .json({ message: 'Recipient user not found.' });
+            }
+
+            const sentDate = new Date(); // Get the current date and time
+
+            // Retrieve recipient user's existing sent messages
+            const existingSentMessages =
+              recipientResults[0].sent_messages || '[]';
+            const existingReceivedMessages =
+              recipientResults[0].received_messages || '[]';
+
+            // Parse the existing sent messages or initialize as an empty array
+            const parsedExistingSentMessages = JSON.parse(existingSentMessages);
+            const parsedExistingReceivedMessages = JSON.parse(
+              existingReceivedMessages,
+            );
+
+            // Create a new message object with sender's username
+            const newMessage = {
+              to: data.to, // receiver's username
+              content: data.content,
+              sentDate: sentDate.toISOString(),
+            };
+            const newMessage1 = {
+              from: userResults[0].username, // Sender's username
+              content: data.content,
+              sentDate: sentDate.toISOString(),
+            };
+
+            // Update the recipient user's sent_messages array
+            parsedExistingSentMessages.push(newMessage);
+            parsedExistingReceivedMessages.push(newMessage1);
+
+            // Update the recipient user's record in the database with the new sent_messages array
+            db.query(
+              'UPDATE User SET sent_messages = ? WHERE username = ?',
+              [
+                JSON.stringify(parsedExistingSentMessages),
+                userResults[0].username,
+              ],
+              (updateError1) => {
+                if (updateError1) {
+                  console.error('Error:', updateError1);
+                  return res
+                    .status(500)
+                    .json({ message: 'Message sending failed.' });
+                }
+
+                // Update the sender user's record in the database with the new received_messages array
+                db.query(
+                  'UPDATE User SET received_messages = ? WHERE username = ?',
+                  [JSON.stringify(parsedExistingReceivedMessages), data.to],
+                  (updateError2) => {
+                    if (updateError2) {
+                      console.error('Error:', updateError2);
+                      return res
+                        .status(500)
+                        .json({ message: 'Message sending failed.' });
+                    }
+
+                    // Send the response only after the database queries have been executed
+                    return res.json({ message: 'Message sent successfully.' });
+                  },
+                );
+              },
+            );
+          },
+        );
+
+        }
+
+        // User exists and is active, proceed to retrieve contributions
+        db.query(
+          'SELECT * FROM Contributions WHERE userID = ?',
+          [userId],
+          (contribError, contribResults) => {
+            if (contribError) {
+              return res
+                .status(500)
+                .json({ message: 'Failed to retrieve contributions.' });
+            }
+
+            // Return the contributions as JSON response
+            return res.json({ contributions: contribResults });
+          },
+        );
+      },
+    );
+  }
+
+ 
 
   getReceivedMessages(req, res) {
     const { userId } = req.session;

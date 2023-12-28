@@ -1,4 +1,6 @@
 /* eslint-disable prefer-promise-reject-errors */
+const ScoreRepository = require('./ScoreRepository');
+const scoreRepository = new ScoreRepository();
 
 const mysql = require('mysql2');
 require('dotenv').config();
@@ -22,6 +24,8 @@ class DataRepository {
 
     return new Promise((resolve, reject) => {
       const timestamp = new Date();
+      //const scoringMultiplier = 0.1;
+      //const scoreIncrease = DataValue * scoringMultiplier;
       db.query(
         'INSERT INTO data (DataType, DataValue, Timestamp, UserID, DataSource, Location, Description) VALUES (?, ?, ?, ?, ?, ?,?)',
         [DataType, DataValue, timestamp, userId, DataSource, null, Description],
@@ -31,6 +35,8 @@ class DataRepository {
             const err = `Error inserting into the database: ${error.message}`;
             return reject(err);
           }
+
+          scoreRepository.updateOrInsertScore(userId, DataValue, DataType);
 
           // Assuming you have some meaningful data to return, adjust as needed
           const responseData = {
