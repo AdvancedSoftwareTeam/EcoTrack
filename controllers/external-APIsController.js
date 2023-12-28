@@ -5,26 +5,19 @@ const userRepository = new UserRepository();
 exports.getNews = async (req, res) => {
   try {
     const { userId } = req.session;
-
-    if (!userId) {
-      return res.status(401).json({ message: 'User not authenticated.' });
-    }
-
-    console.log(userId);
     const userInterests = await userRepository.getUserInterests(userId);
 
     console.log(userInterests);
 
-    // Ensure userInterests is an array
-    const interestsArray = Array.isArray(userInterests)
-      ? userInterests.map((item) => item.interests.term)
-      : userInterests && userInterests.interests
-      ? [userInterests.interests.term]
-      : [];
+    // Ensure userInterests is an array and has items
+    const interestsArray =
+      Array.isArray(userInterests) && userInterests.length > 0
+        ? userInterests.map((item) => item.Interests?.term)
+        : [];
 
     if (interestsArray.length === 0) {
       return res
-        .status(400)
+        .status(404)
         .json({ message: 'User has no interests to query.' });
     }
 
@@ -45,17 +38,17 @@ exports.getNews = async (req, res) => {
 
     console.log('News API Response:', newsApiResponse.data);
 
-    if (newsApiResponse.data.totalResults === 0) {
-      return res.json({
-        news: [],
+    // Extract relevant data from the News API response
+    const totalResults = newsApiResponse.data.totalResults || 0;
+
+    if (totalResults === 0) {
+      return res.status(404).json({
         message: 'No news articles found for the specified interests.',
       });
     }
 
-    // Extract relevant data from the News API response
-    const articles = newsApiResponse.data.articles || [];
-
     // Map the relevant data for each article
+    const articles = newsApiResponse.data.articles || [];
     const mappedArticles = articles.map((article) => ({
       title: article.title,
       description: article.description,
@@ -102,12 +95,17 @@ exports.getNewsByTopic = async (req, res) => {
       publishedAt: article.publishedAt,
     }));
 
+    // Check if there are no articles found
+    if (articles.length === 0) {
+      return res
+        .status(404)
+        .json({ message: 'No news found for the given topic.' });
+    }
+
     // Send the news as the API response
     res.json({ news: mappedArticles });
   } catch (error) {
     console.error('Error fetching news:', error);
-
-    // Log the error details
     res.status(500).json({ message: 'Internal server error.' });
   }
 };

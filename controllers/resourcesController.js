@@ -168,7 +168,7 @@ exports.updateResource = async (req, res) => {
     );
 
     if (updatedResource) {
-      res.json({ resource: updatedResource });
+      res.status(200).json({ resource: updatedResource });
     } else {
       res.status(404).json({ message: 'Resource not found.' });
     }
@@ -185,7 +185,7 @@ exports.deleteResource = async (req, res) => {
     const deletedResource = await resourceRepository.deleteResource(resourceId);
 
     if (deletedResource) {
-      res.json({ message: 'Resource deleted successfully.' });
+      res.status(200).json({ message: 'Resource deleted successfully.' });
     } else {
       res.status(404).json({ message: 'Resource not found.' });
     }
@@ -199,14 +199,54 @@ exports.filterResourcesByTopic = async (req, res) => {
   const topic = req.params;
 
   try {
+    // Fetch resources from your database
     const results = await resourceRepository.filterResourcesByTopic(topic);
 
-    if (results.length === 0) {
+    // Use external API to enhance resource data
+    const enhancedResults = await Promise.all(
+      results.map(async (resource) => {
+        try {
+          // Use the external API (adjust the URL and parameters accordingly)
+          const externalApiResponse = await axios.get(
+            'https://books.googleapis.com/books/v1/volumes',
+            {
+              params: {
+                q: resource.title,
+                key: 'AIzaSyDgmky3Y9Akhak0ZhjFrFSoKPyQ0N40diA', // Replace with your actual API key
+              },
+            },
+          );
+
+          // Extract relevant data from the external API response
+          const enhancedData = {
+            bookCover:
+              externalApiResponse.data.items?.[0]?.volumeInfo?.imageLinks
+                ?.thumbnail,
+            author: externalApiResponse.data.items?.[0]?.volumeInfo?.authors,
+            description:
+              externalApiResponse.data.items?.[0]?.volumeInfo?.description,
+            publisher:
+              externalApiResponse.data.items?.[0]?.volumeInfo?.publisher,
+
+            // Add other relevant data from the external API
+          };
+
+          // Combine the original resource data with the enhanced data
+          return { ...resource, ...enhancedData };
+        } catch (error) {
+          // Handle errors from the external API request
+          console.error('Error fetching data from external API:', error);
+          return resource; // Return the original resource in case of API error
+        }
+      }),
+    );
+
+    if (enhancedResults.length === 0) {
       res
         .status(404)
         .json({ message: 'No resources found for the given topic.' });
     } else {
-      res.json({ resources: results });
+      res.json({ resources: enhancedResults });
     }
   } catch (error) {
     console.error('Error filtering resources by topic:', error);
@@ -218,14 +258,54 @@ exports.filterResourcesByType = async (req, res) => {
   const type = req.params;
 
   try {
+    // Fetch resources from your database
     const results = await resourceRepository.filterResourcesByType(type);
 
-    if (results.length === 0) {
+    // Use external API to enhance resource data
+    const enhancedResults = await Promise.all(
+      results.map(async (resource) => {
+        try {
+          // Use the external API (adjust the URL and parameters accordingly)
+          const externalApiResponse = await axios.get(
+            'https://books.googleapis.com/books/v1/volumes',
+            {
+              params: {
+                q: resource.title,
+                key: 'AIzaSyDgmky3Y9Akhak0ZhjFrFSoKPyQ0N40diA', // Replace with your actual API key
+              },
+            },
+          );
+
+          // Extract relevant data from the external API response
+          const enhancedData = {
+            bookCover:
+              externalApiResponse.data.items?.[0]?.volumeInfo?.imageLinks
+                ?.thumbnail,
+            author: externalApiResponse.data.items?.[0]?.volumeInfo?.authors,
+            description:
+              externalApiResponse.data.items?.[0]?.volumeInfo?.description,
+            publisher:
+              externalApiResponse.data.items?.[0]?.volumeInfo?.publisher,
+
+            // Add other relevant data from the external API
+          };
+
+          // Combine the original resource data with the enhanced data
+          return { ...resource, ...enhancedData };
+        } catch (error) {
+          // Handle errors from the external API request
+          console.error('Error fetching data from external API:', error);
+          return resource; // Return the original resource in case of API error
+        }
+      }),
+    );
+
+    if (enhancedResults.length === 0) {
       res
         .status(404)
         .json({ message: 'No resources found for the given type.' });
     } else {
-      res.json({ resources: results });
+      res.json({ resources: enhancedResults });
     }
   } catch (error) {
     console.error('Error filtering resources by type:', error);

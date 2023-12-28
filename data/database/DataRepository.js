@@ -53,7 +53,7 @@ class DataRepository {
         if (error) {
           console.error('Error querying data from the database:', error);
           const detailedError = `Error querying data from the database: ${error.message}`;
-          return res.status(500).json({ message: detailedError });
+          return res.status(404).json({ message: detailedError });
         }
 
         if (results.length === 0) {
