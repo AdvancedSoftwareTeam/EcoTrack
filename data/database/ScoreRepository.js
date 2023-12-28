@@ -56,37 +56,7 @@ class ScoreRepository {
         val = DataValue * 0.2;
         break;
     }
-    /*db.query(
-      'SELECT ScoreValue FROM scores WHERE userId = ?',
-      [userId],
-      (error, results) => {
-        if (error) {
-          console.error('Error retrieving score from the database:', error);
-          // Handle the error appropriately, e.g., by sending an error response
-          return res.status(500).json({ message: 'Internal Server Error' });
-        }
 
-        if (results.length > 0) {
-          oldVal = results;
-
-          newVal = oldVal + val;
-          // newVal = oldVal + val;
-
-          // Now you can use newVal for further processing
-          console.log('Old ScoreValue:', oldVal);
-          console.log('New ScoreValue:', newVal);
-
-          // ... Continue with your code here
-        } else {
-          // Handle the case where no score is found for the given userId
-          return res
-            .status(404)
-            .json({ message: 'Score not found for the user' });
-        }
-      },
-    );
-*/
-    //const contrb=calculateContribution(DataValue, DataType);
     newVal = this.oldVal + val;
     this.oldVal = newVal;
 
