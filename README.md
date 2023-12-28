@@ -72,7 +72,7 @@ We have employed Postman for comprehensive API testing to ensure the functionali
 
 #### Demo 
 
-click on the following link to watch the testing [demo](https://documenter.getpostman.com/view/29528140/2s9YkuZyR9](https://drive.google.com/file/d/1IhVZ-JUvbNWw50SRC-YMC2zegsws5C2s/view?usp=sharing)https://drive.google.com/file/d/1IhVZ-JUvbNWw50SRC-YMC2zegsws5C2s/view?usp=sharing).
+click on the following link to watch the testing [demo video](https://drive.google.com/file/d/1IhVZ-JUvbNWw50SRC-YMC2zegsws5C2s/view?usp=sharing).
 
 ## Vision
 
