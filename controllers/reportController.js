@@ -2,13 +2,14 @@ const ReportModel = require('../models/reportModel');
 
 const ReportController = {
   createReport: async (req, res) => {
-    const { userID, issue, description } = req.body;
+    const { userID, reportType, description, status } = req.body;
 
     try {
       const insertedId = await ReportModel.createReport(
         userID,
-        issue,
+        reportType,
         description,
+        status,
       );
       res
         .status(201)
