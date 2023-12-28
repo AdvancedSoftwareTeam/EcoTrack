@@ -5,6 +5,7 @@ The goal of EcoTrack, an innovative environmental monitoring and reporting platf
 ## Table of Contents
 
 - [Introduction](#introduction)
+- [Project Folders](#project-folders)
 - [Features](#features)
 - [Technologies Used](#technologies-used)
 - [Getting Started](#getting-started)
@@ -12,9 +13,14 @@ The goal of EcoTrack, an innovative environmental monitoring and reporting platf
 - [Testing](#testing)
 - [Vision](#vision)
 
+
 ## Introduction
 
 EcoTrack serves as a robust backend API designed to handle environmental data collection, user profile management, environmental alerts, community reporting, sustainability scoring, educational resources provision, and open data access for researchers and organizations. It's a platform aimed at promoting environmental awareness, facilitating data sharing, and encouraging sustainable practices.
+
+## Project Folders
+
+<img width="197" alt="folders" src="https://github.com/AdvancedSoftwareTeam/EcoTrack/assets/111571170/fccf2069-262e-4ac2-9476-eff605811d9d">
 
 ## Features
 
