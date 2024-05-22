@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 const userSocketMap = {};
 
 exports.addUserSocket = (userId, socket) => {
@@ -12,9 +13,7 @@ exports.removeUserSocket = (socket) => {
     delete userSocketMap[userId];
   }
 };
-exports.doesUserExist = (userId) => {
-  return userSocketMap.hasOwnProperty(userId);
-};
+exports.doesUserExist = (userId) => userSocketMap.hasOwnProperty(userId);
 exports.getUserSocket = (userId) => userSocketMap[userId];
 exports.notifyUser = (userId, data) => {
   if (userSocketMap.hasOwnProperty(userId)) {

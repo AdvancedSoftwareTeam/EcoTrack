@@ -1,5 +1,10 @@
+/* eslint-disable import/order */
+/* eslint-disable no-throw-literal */
+/* eslint-disable no-dupe-class-members */
+/* eslint-disable prefer-destructuring */
 /* eslint-disable prefer-promise-reject-errors */
 const ScoreRepository = require('./ScoreRepository');
+
 const scoreRepository = new ScoreRepository();
 
 const mysql = require('mysql2');
@@ -495,7 +500,7 @@ class UserRepository {
                   );
 
                   return res.json({ receivedMessages: messagesWithSource });
-                } else {
+                } 
                   console.error(
                     'Invalid received_messages data structure:',
                     receivedMessages,
@@ -503,7 +508,7 @@ class UserRepository {
                   return res.status(500).json({
                     message: 'Invalid received_messages data structure.',
                   });
-                }
+                
               } catch (jsonParseError) {
                 console.error(
                   'Error parsing received_messages:',
@@ -733,7 +738,7 @@ class UserRepository {
                   );
 
                   return res.json({ receivedMessages: messagesWithSource });
-                } else {
+                } 
                   console.error(
                     'Invalid received_messages data structure:',
                     receivedMessages,
@@ -741,7 +746,7 @@ class UserRepository {
                   return res.status(500).json({
                     message: 'Invalid received_messages data structure.',
                   });
-                }
+                
               } catch (jsonParseError) {
                 console.error(
                   'Error parsing received_messages:',
@@ -802,8 +807,7 @@ class UserRepository {
     const data = req.body;
 
     // Function to execute a database query
-    const queryDatabase = (sql, params) => {
-      return new Promise((resolve, reject) => {
+    const queryDatabase = (sql, params) => new Promise((resolve, reject) => {
         db.query(sql, params, (error, results) => {
           if (error) {
             console.error('Error:', error);
@@ -813,7 +817,6 @@ class UserRepository {
           }
         });
       });
-    };
 
     let userResults;
     let parsedExistingReceivedMessages; // Declare it at a higher scope
@@ -877,20 +880,20 @@ class UserRepository {
           [JSON.stringify(parsedExistingSentMessages), userId],
         );
       })
-      .then(() => {
+      .then(() => 
         // Update the sender user's record in the database with the new received_messages array
-        return queryDatabase(
+         queryDatabase(
           'UPDATE User SET received_messages = ? WHERE username = ?',
           [JSON.stringify(parsedExistingReceivedMessages), data.to],
-        );
-      })
-      .then(() => {
+        )
+      )
+      .then(() => 
         // Fetch the updated sent_messages array for the sender
-        return queryDatabase(
+         queryDatabase(
           'SELECT sent_messages FROM User WHERE userID = ?',
           [userId],
-        );
-      })
+        )
+      )
       .then((senderRecord) => {
         console.log(
           'Sender Sent Messages after update:',
@@ -983,7 +986,7 @@ class UserRepository {
           if (error) {
             reject('Error fetching user type from the database.');
           } else {
-            const userType = results[0]?.userType;
+            const userType = results[0].userType;
             resolve(userType);
           }
         },
